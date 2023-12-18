@@ -1,0 +1,3 @@
+[submodule "rpos"]
+	path = rpos
+	url = https://github.com/Ncerzzk/RustPilotOS.git
