@@ -1,9 +1,8 @@
 mod gazebo_sim;
 use std::io::{Read, Write};
 use std::os::unix::net::{UnixStream, UnixListener};
-use std::env::{self};
-use std::fs::{self, remove_file};
-use std::str::SplitWhitespace;
+use std::env;
+use std::fs::remove_file;
 use rpos::module::Module;
 
 fn main() {
@@ -25,9 +24,10 @@ fn main() {
             client.unwrap().read_to_string(&mut cmd_raw).unwrap();
             let cmd_with_args:Vec<_> = cmd_raw.split_whitespace().collect();
             assert!(cmd_with_args.len()>=1);
-            Module::get_module(cmd_with_args[0]).execute((cmd_with_args.len() - 1) as u32, cmd_with_args[1..].as_ptr());
-            println!("Client said: {}",cmd_raw);
-        }
+            println!("Client said: {}   argc:{}",cmd_raw,cmd_with_args.len());
+            Module::get_module(cmd_with_args[0]).execute((cmd_with_args.len()) as u32, cmd_with_args.as_ptr());
+            
+        } 
     }else{
         let mut stream = UnixStream::connect(SOCKET_PATH).unwrap(); // panic if the server is not runing.
         let other_args = args[1..].join(" ");

@@ -8,3 +8,14 @@ edition = "2021"
 [dependencies]
 rpos = {path = "./rpos"}
 gz = { version = "0.7.4", features = ["harmonic"] }
+gz-msgs-common = "0.7.4"
+toml = "0.8.8"
+serde = {version = "1.0.193",features = ["derive"]}
+
+
+
+[features]
+gzsim = ["rpos/lock_step_enabled"]
+
+[build-dependencies]
+nom-kconfig = "0.2.0"
