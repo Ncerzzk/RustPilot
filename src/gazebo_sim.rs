@@ -11,6 +11,7 @@ use rpos::lock_step::lock_step_update_time;
 use rpos::module::Module;
 use rpos::ctor::ctor;
 use gz::{msgs::world_stats::WorldStatistics,msgs::pose_v::Pose_V};
+use quaternion_core::{Quaternion,RotationType::Intrinsic,RotationSequence,to_euler_angles};
 
 
 
@@ -45,7 +46,12 @@ impl GazeboSim{
         }
         let pose = &s.pose[*pos_idx as usize];
         let _position = (pose.position.x,pose.position.y,pose.position.z);
-        let _q = (pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
+        let q:Quaternion<f32> =  (pose.orientation.w as f32, 
+            [pose.orientation.x as f32,
+            pose.orientation.y as f32, 
+            pose.orientation.z as f32 
+            ]);
+        let angle = to_euler_angles(Intrinsic, RotationSequence::ZYX, q);
     }
 
     fn new(wq: &Arc<WorkQueue>,toml_filename:&str)->Arc<Self>{
