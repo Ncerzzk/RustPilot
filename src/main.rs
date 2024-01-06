@@ -1,6 +1,9 @@
 #![feature(lazy_cell)]
 mod gazebo_sim;
 mod log;
+mod msg_echo;
+mod message;
+
 use std::ffi::CStr;
 use std::io::{Read, Write};
 use std::mem::MaybeUninit;
@@ -84,7 +87,7 @@ fn main() {
         stream.write_all(other_args.as_bytes()).unwrap();
         stream.flush().unwrap();
         let mut out = String::new();
-        stream.read_to_string(&mut out).unwrap();
+        stream.read_to_string(&mut out).unwrap(); // TODO: change to read output immediately
         println!("{}",out);
     }
 
