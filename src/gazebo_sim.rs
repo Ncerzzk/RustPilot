@@ -1,25 +1,26 @@
 use core::slice;
-use std::fmt::format;
-use std::mem::MaybeUninit;
 use std::{ os::raw::c_void, sync::Arc, cell::RefCell, time::Duration};
 
-use gz::msgs::gz_msgs10;
+use crossbeam::channel::Sender;
 use gz::msgs::{any::Any};
 use rpos::hrt::Timespec;
 use rpos::workqueue::{WorkQueue, WorkItem};
 use rpos::lock_step::lock_step_update_time;
 use rpos::module::Module;
 use rpos::ctor::ctor;
-use gz::{msgs::world_stats::WorldStatistics,msgs::pose_v::Pose_V};
+use gz::{msgs::world_stats::WorldStatistics,msgs::pose_v::Pose_V,msgs::imu::IMU};
 use quaternion_core::{Quaternion,RotationType::Intrinsic,RotationSequence,to_euler_angles};
-
+use crate::message::get_message_list;
+use crate::msg_define::*;
 
 
 struct GazeboSim{
     workitem:Arc<WorkItem>,
     gz_node:RefCell<gz::transport::Node>,
     pose_index:RefCell<i32>,
-    gz_sub_info:GzSubInfo
+    gz_sub_info:GzSubInfo,
+    gyro_tx:Sender<GyroMsg>,
+    acc_tx:Sender<AccMsg>
 }
 
 #[derive(serde::Deserialize)]
@@ -54,20 +55,32 @@ impl GazeboSim{
         let angle = to_euler_angles(Intrinsic, RotationSequence::ZYX, q);
     }
 
+    fn update_imu(self:&Arc<Self>,s:IMU){
+        let gyro_data = s.angular_velocity;
+        let acc_data = s.linear_acceleration;
+        self.gyro_tx.send(GyroMsg{x:gyro_data.x as f32,y:gyro_data.y as f32,z:gyro_data.z as f32}).unwrap();
+        self.acc_tx.send(AccMsg{x:acc_data.x as f32, y:acc_data.y as f32, z:acc_data.z as f32}).unwrap();
+    }
+
     fn new(wq: &Arc<WorkQueue>,toml_filename:&str)->Arc<Self>{
         
         let sub_info:GzSubInfo= toml::from_str(&std::fs::read_to_string(toml_filename).unwrap()).unwrap();
+        let msg_list =  get_message_list();
+
         let sim = Arc::new_cyclic(|weak|{
             let a = GazeboSim{
                 workitem: WorkItem::new(wq,"gazebo",weak.as_ptr() as *mut Any,run),
                 gz_node: RefCell::new(gz::transport::Node::new().unwrap()),
                 pose_index: RefCell::new(-1),
-                gz_sub_info:sub_info
+                gz_sub_info:sub_info,
+                gyro_tx:msg_list.read().unwrap().get_message("gyro").unwrap().tx.clone(),
+                acc_tx:msg_list.read().unwrap().get_message("acc").unwrap().tx.clone(),
             };
             a
         });
         assert!(sim.subscribe(&format!("/world/{}/stats",sim.gz_sub_info.world_name) ,Self::update_time));
         assert!(sim.subscribe(&format!("/world/{}/dynamic_pose/info",sim.gz_sub_info.world_name),Self::update_pose));
+        assert!(sim.subscribe("/imu",Self::update_imu));
         sim
     }
 
@@ -105,7 +118,6 @@ pub fn init_gazebo_sim(_argc:u32, _argv:*const &str){
 
     let sim = GazeboSim::new(&wq,argv[1]);
     println!("gz inited!");
-    sim.workitem.schedule();
 }
 
 #[ctor]

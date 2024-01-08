@@ -3,6 +3,7 @@ mod gazebo_sim;
 mod log;
 mod msg_echo;
 mod message;
+mod msg_define;
 
 use std::ffi::CStr;
 use std::io::{Read, Write};

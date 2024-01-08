@@ -6,7 +6,7 @@ pub struct Message<T>{
     pub tx:Sender<T>
 }
 
-struct MessageList{
+pub struct MessageList{
     data:HashMap<&'static str,Box<dyn Any>>
 }
 
@@ -34,6 +34,10 @@ static MESSAGE_LIST:LazyLock<RwLock<MessageList>> = LazyLock::new(||{
     RwLock::new(MessageList { data:HashMap::new() })
 });
 
+pub fn get_message_list()->&'static LazyLock<RwLock<MessageList>>{
+    &MESSAGE_LIST
+}
+
 #[cfg(test)]
 mod tests{
     use super::*;
@@ -45,14 +49,14 @@ mod tests{
     #[rpos::ctor::ctor]
     fn ttt(){
         let mut msg_list = MESSAGE_LIST.write().unwrap();
-        msg_list.add_message::<GyroData>("gyro");        
+        msg_list.add_message::<GyroData>("test_gyro");        
     }
 
     #[test]
     fn test_basic(){
         let mut msg_list = MESSAGE_LIST.write().unwrap();
-        //msg_list.add_message::<GyroData>("gyro");
-        let msg = msg_list.get_message::<GyroData>("gyro").unwrap();
+        //msg_list.add_message::<GyroData>("test_gyro");
+        let msg = msg_list.get_message::<GyroData>("test_gyro").unwrap();
         let rx = msg.rx.clone();
         let tx = msg.tx.clone();
 
