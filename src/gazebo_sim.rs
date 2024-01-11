@@ -1,17 +1,17 @@
 use core::slice;
 use std::{ os::raw::c_void, sync::Arc, cell::RefCell, time::Duration};
-
-use crossbeam::channel::Sender;
 use gz::msgs::{any::Any};
 use rpos::hrt::Timespec;
 use rpos::workqueue::{WorkQueue, WorkItem};
 use rpos::lock_step::lock_step_update_time;
 use rpos::module::Module;
 use rpos::ctor::ctor;
+use rpos::channel::Sender;
 use gz::{msgs::world_stats::WorldStatistics,msgs::pose_v::Pose_V,msgs::imu::IMU};
 use quaternion_core::{Quaternion,RotationType::Intrinsic,RotationSequence,to_euler_angles};
 use crate::message::get_message_list;
 use crate::msg_define::*;
+
 
 
 struct GazeboSim{
@@ -20,7 +20,8 @@ struct GazeboSim{
     pose_index:RefCell<i32>,
     gz_sub_info:GzSubInfo,
     gyro_tx:Sender<GyroMsg>,
-    acc_tx:Sender<AccMsg>
+    acc_tx:Sender<AccMsg>,
+    attitude_tx:Sender<AttitudeMsg>
 }
 
 #[derive(serde::Deserialize)]
@@ -58,8 +59,15 @@ impl GazeboSim{
     fn update_imu(self:&Arc<Self>,s:IMU){
         let gyro_data = s.angular_velocity;
         let acc_data = s.linear_acceleration;
-        self.gyro_tx.send(GyroMsg{x:gyro_data.x as f32,y:gyro_data.y as f32,z:gyro_data.z as f32}).unwrap();
-        self.acc_tx.send(AccMsg{x:acc_data.x as f32, y:acc_data.y as f32, z:acc_data.z as f32}).unwrap();
+        let attitude_data = s.orientation;
+        self.gyro_tx.send(GyroMsg{x:gyro_data.x as f32,y:gyro_data.y as f32,z:gyro_data.z as f32});
+        self.acc_tx.send(AccMsg{x:acc_data.x as f32, y:acc_data.y as f32, z:acc_data.z as f32});
+        self.attitude_tx.send(AttitudeMsg { 
+            w:attitude_data.w as f32, 
+            x:attitude_data.x as f32, 
+            y:attitude_data.y as f32, 
+            z:attitude_data.z as f32 
+        });
     }
 
     fn new(wq: &Arc<WorkQueue>,toml_filename:&str)->Arc<Self>{
@@ -75,6 +83,7 @@ impl GazeboSim{
                 gz_sub_info:sub_info,
                 gyro_tx:msg_list.read().unwrap().get_message("gyro").unwrap().tx.clone(),
                 acc_tx:msg_list.read().unwrap().get_message("acc").unwrap().tx.clone(),
+                attitude_tx:msg_list.read().unwrap().get_message("attitude").unwrap().tx.clone(),
             };
             a
         });

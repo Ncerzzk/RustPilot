@@ -1,3 +1,5 @@
+use quaternion_core::Quaternion;
+
 
 // Gyro message data, unit:rad/s
 pub struct GyroMsg{
@@ -13,10 +15,19 @@ pub struct AccMsg{
     pub z:f32
 }
 
+// Attitude message data
+pub struct AttitudeMsg{
+    pub w:f32,
+    pub x:f32,
+    pub y:f32,
+    pub z:f32
+}
+
 #[rpos::ctor::ctor]
 fn register_msgs(){
     let msg_list = crate::message::get_message_list();
     let mut msg_list = msg_list.write().unwrap();
     msg_list.add_message::<GyroMsg>("gyro");
-    msg_list.add_message::<AccMsg>("acc");  
+    msg_list.add_message::<AccMsg>("acc");
+    msg_list.add_message::<AttitudeMsg>("attitude");
 }

@@ -1,5 +1,5 @@
 use std::{sync::{LazyLock, RwLock}, collections::HashMap, any::Any};
-use crossbeam::channel::{Receiver, unbounded, Sender};
+use rpos::channel::{Receiver,Sender,Channel};
 
 pub struct Message<T>{
     pub rx:Receiver<T>,
@@ -12,7 +12,7 @@ pub struct MessageList{
 
 impl MessageList{
     pub fn add_message<T:'static>(&mut self, name:&'static str){
-        let (tx,rx) = unbounded::<T>();
+        let (tx,rx) = Channel::<T>::new();
         let msg= Message{
             rx,
             tx
@@ -57,14 +57,14 @@ mod tests{
         let mut msg_list = MESSAGE_LIST.write().unwrap();
         //msg_list.add_message::<GyroData>("test_gyro");
         let msg = msg_list.get_message::<GyroData>("test_gyro").unwrap();
-        let rx = msg.rx.clone();
+        let mut rx = msg.rx.clone();
         let tx = msg.tx.clone();
 
         std::thread::spawn(move ||{
             tx.send(GyroData{ data: [1,2,3] });
         });
 
-        let recv_data = rx.recv().unwrap().data;
+        let recv_data = rx.read().data;
 
         assert_eq!(recv_data[0],1);
         assert_eq!(recv_data[1],2);
