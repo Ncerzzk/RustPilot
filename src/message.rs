@@ -11,7 +11,7 @@ pub struct MessageList{
 }
 
 impl MessageList{
-    pub fn add_message<T:'static>(&mut self, name:&'static str){
+    pub fn add_message<T:Clone + 'static>(&mut self, name:&'static str){
         let (tx,rx) = Channel::<T>::new();
         let msg= Message{
             rx,
@@ -42,6 +42,7 @@ pub fn get_message_list()->&'static LazyLock<RwLock<MessageList>>{
 mod tests{
     use super::*;
 
+    #[derive(Debug,Clone,Copy)]
     struct GyroData{
         data:[i32;3]
     }
