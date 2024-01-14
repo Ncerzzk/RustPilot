@@ -34,6 +34,18 @@ pub struct AttitudeTargetEulerMsg{
     pub yaw:f32
 }
 
+// Controller Output
+#[derive(Debug,Clone,Copy)]
+pub struct ControllerOutputGroupMsg{
+    pub output:[f32;8],
+}
+
+// Controller Output
+#[derive(Debug,Clone)]
+pub struct MixerOutputMsg{
+    pub output:Box<Vec<(u8,f32)>>,
+}
+
 #[rpos::ctor::ctor]
 fn register_msgs(){
     let msg_list = crate::message::get_message_list();
@@ -42,4 +54,8 @@ fn register_msgs(){
     msg_list.add_message::<AccMsg>("acc");
     msg_list.add_message::<AttitudeMsg>("attitude");
     msg_list.add_message::<AttitudeTargetEulerMsg>("att_target_euler");
+    msg_list.add_message::<ControllerOutputGroupMsg>("controller_output0");
+    msg_list.add_message::<ControllerOutputGroupMsg>("controller_output1");
+    msg_list.add_message::<MixerOutputMsg>("mixer_output");
 }
+
