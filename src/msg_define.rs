@@ -40,7 +40,7 @@ pub struct ControllerOutputGroupMsg{
     pub output:[f32;8],
 }
 
-// Controller Output
+// Mixer Output
 #[derive(Debug,Clone)]
 pub struct MixerOutputMsg{
     pub output:Box<Vec<(u8,f32)>>,
