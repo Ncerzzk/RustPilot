@@ -39,22 +39,6 @@ impl GazeboSim{
         lock_step_update_time(t);
     }
 
-    #[inline(always)]
-    fn update_pose(self:&Arc<Self>,s:Pose_V){
-        let mut pos_idx = self.pose_index.borrow_mut();
-        if *pos_idx == -1{
-            let index = s.pose.iter().position(|x| x.name == self.gz_sub_info.pose_obj_name).unwrap() as i32;
-            *pos_idx = index;
-        }
-        let pose = &s.pose[*pos_idx as usize];
-        let _position = (pose.position.x,pose.position.y,pose.position.z);
-        let q:Quaternion<f32> =  (pose.orientation.w as f32, 
-            [pose.orientation.x as f32,
-            pose.orientation.y as f32, 
-            pose.orientation.z as f32 
-            ]);
-        let angle = to_euler_angles(Intrinsic, RotationSequence::ZYX, q);
-    }
 
     fn update_imu(self:&Arc<Self>,s:IMU){
         let gyro_data = s.angular_velocity;
@@ -88,7 +72,6 @@ impl GazeboSim{
             a
         });
         assert!(sim.subscribe(&format!("/world/{}/stats",sim.gz_sub_info.world_name) ,Self::update_time));
-        assert!(sim.subscribe(&format!("/world/{}/dynamic_pose/info",sim.gz_sub_info.world_name),Self::update_pose));
         assert!(sim.subscribe("/imu",Self::update_imu));
         sim
     }
