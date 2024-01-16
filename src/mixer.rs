@@ -227,33 +227,34 @@ impl SumMixer {
 }
 
 static mut MIXER: OnceLock<Mixer> = OnceLock::new();
+const CONTROLLER_OUTPUT_COUNT: u8 = 2;
 
 pub unsafe fn init_mixer(_argc: u32, _argv: *const &str) {
     let msg_list = get_message_list().read().unwrap();
     let msg = msg_list.get_message("mixer_output").unwrap();
-    let _ = MIXER.set(Mixer {
-        controller_outputs: Vec::new(),
-        mixers: Vec::new(),
-        tx: msg.tx.clone(),
+    let _ = MIXER.get_or_init(|| {
+        let mut ret = Mixer {
+            controller_outputs: Vec::new(),
+            mixers: Vec::new(),
+            tx: msg.tx.clone(),
+        };
+
+        let msg_list = get_message_list().read().unwrap();
+        for i in 0..CONTROLLER_OUTPUT_COUNT {
+            let msg = msg_list
+                .get_message::<ControllerOutputGroupMsg>(format!("controller_output{}", i).as_str())
+                .unwrap();
+            ret.controller_outputs
+                .push(ControllerOutputGroupMsg { output: [0.0; 8] });
+            msg.rx.register_callback(
+                format!("mixer_listener{}", i).as_str(),
+                move |x: &ControllerOutputGroupMsg| {
+                    MIXER.get_mut().unwrap().update_ctrl_outputs(i, x);
+                },
+            );
+        }
+        ret
     });
-    let msg_list = get_message_list().read().unwrap();
-    const CONTROLLER_OUTPUT_COUNT: u8 = 2;
-    for i in 0..CONTROLLER_OUTPUT_COUNT {
-        let msg = msg_list
-            .get_message::<ControllerOutputGroupMsg>(format!("controller_output{}", i).as_str())
-            .unwrap();
-        MIXER
-            .get_mut()
-            .unwrap()
-            .controller_outputs
-            .push(ControllerOutputGroupMsg { output: [0.0; 8] });
-        msg.rx.register_callback(
-            format!("mixer_listener{}", i).as_str(),
-            move |x: &ControllerOutputGroupMsg| {
-                MIXER.get_mut().unwrap().update_ctrl_outputs(i, x);
-            },
-        );
-    }
 }
 
 #[rpos::ctor::ctor]
@@ -287,25 +288,29 @@ mod tests {
             init_mixer(0, null_mut());
             assert_eq!(MIXER.get().unwrap().controller_outputs.len(), 2);
 
-            assert!(!(MIXER.get().unwrap().controller_outputs[0].output[0] > 0.0));
             tx.send(ControllerOutputGroupMsg { output: [1.0; 8] });
             for i in 0..8 {
                 assert!(MIXER.get().unwrap().controller_outputs[0].output[i as usize] > 0.0);
+                assert!(MIXER.get().unwrap().controller_outputs[0].output[i as usize] < 2.0);
             }
         }
     }
 
     #[test]
-    fn test_x_quadcoptermixer_calcute(){
+    fn test_x_quadcoptermixer_calcute() {
         let ctrl_tx = get_fake_controller_output_tx(0);
-        let msg_list =get_message_list().read().unwrap();
-        let mut mixer_rx = msg_list.get_message::<MixerOutputMsg>("mixer_output").unwrap().rx.clone();
-        unsafe{
+        let msg_list = get_message_list().read().unwrap();
+        let mut mixer_rx = msg_list
+            .get_message::<MixerOutputMsg>("mixer_output")
+            .unwrap()
+            .rx
+            .clone();
+        unsafe {
             init_mixer(0, null_mut());
             MIXER.get_mut().unwrap().init_x_quadcopter_mixers();
         }
 
         ctrl_tx.send(ControllerOutputGroupMsg { output: [50.0; 8] });
-        println!("{:?}",mixer_rx.read())
+        println!("{:?}", mixer_rx.read())
     }
 }
