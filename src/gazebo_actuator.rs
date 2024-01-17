@@ -4,18 +4,23 @@ use gz::msgs::actuators::Actuators;
 use gz::transport::Publisher;
 use rpos::channel::Receiver;
 
-use crate::{message::get_message_list, msg_define::MixerOutputMsg};
+use crate::{message::get_message_list, mixer::Scaler, msg_define::MixerOutputMsg};
 
 struct GazeboActuator {
     gz_node: gz::transport::Node,
     publisher: Publisher<Actuators>,
+    scaler: Scaler,
 }
 
 impl GazeboActuator {
     #[inline(always)]
     fn mixer_output_callback(&mut self, msg: &MixerOutputMsg) {
+        let mut v: Vec<f64> = Vec::new();
+        for (_, val) in &*msg.output {
+            v.push(self.scaler.scale(val + 0.0) as f64);
+        }
         let _ = self.publisher.publish(&Actuators {
-            velocity: [1.0].to_vec(),
+            velocity: v,
             ..Default::default()
         });
     }
@@ -34,6 +39,13 @@ pub fn init_gz_actuator(argc: u32, argv: *const &str) {
     let gz_ac = GazeboActuator {
         gz_node: node,
         publisher,
+        scaler: Scaler {
+            scale_p: 1.00,
+            scale_n: 1.0,
+            offset: 0.0,
+            min: 0.0,
+            max: 1000.0,
+        },
     };
 
     let _ = unsafe { GAZEBO_ACTUATOR.set(gz_ac) };
@@ -77,6 +89,8 @@ mod tests {
             )
         };
 
-        tx.send(MixerOutputMsg{ output:Box::new(Vec::new())});
+        tx.send(MixerOutputMsg {
+            output: Box::new(Vec::new()),
+        });
     }
 }

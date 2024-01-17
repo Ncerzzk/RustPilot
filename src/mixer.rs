@@ -34,7 +34,8 @@ impl Mixer {
                 publish.push((i.output_channel_idx, i.calcuate(&self.controller_outputs)));
             }
         }
-
+        println!("{:?}",msg);
+        println!("{:?}",publish); 
         self.tx.send(MixerOutputMsg {
             output: Box::new(publish),
         });
@@ -42,11 +43,12 @@ impl Mixer {
 
     fn init_x_quadcopter_mixers(&mut self) {
         /*
-               4     1
+            gazebo x3 quadcopter motor index
+               2     0
                   x
-               2     3
+               1     3
         */
-        let motor_1 = SumMixer {
+        let motor_0 = SumMixer {
             list: vec![
                 MixerChannel {
                     scaler: Scaler::default(),
@@ -59,15 +61,27 @@ impl Mixer {
                     ctrl_channel_idx: ControllerOutputChannel::Roll as u8,
                 },
             ],
-            scaler: Scaler {
-                scale_p: 0.5,
-                scale_n: 0.5,
-                offset: 50.0,
-                min: 0.0,
-                max: 100.0,
-            },
+            scaler: Scaler::default(),
             bind_ctrl_group_id: 0,
             output_channel_idx: 0,
+        };
+
+        let motor_1 = SumMixer {
+            list: vec![
+                MixerChannel {
+                    scaler: Scaler::default(),
+                    ctrl_group_id: 0,
+                    ctrl_channel_idx: ControllerOutputChannel::Pitch as u8,
+                },
+                MixerChannel {
+                    scaler: Scaler::default(),
+                    ctrl_group_id: 0,
+                    ctrl_channel_idx: ControllerOutputChannel::Roll as u8,
+                },
+            ],
+            scaler: Scaler::default(),
+            bind_ctrl_group_id: 0,
+            output_channel_idx: 1,
         };
 
         let motor_2 = SumMixer {
@@ -78,20 +92,14 @@ impl Mixer {
                     ctrl_channel_idx: ControllerOutputChannel::Pitch as u8,
                 },
                 MixerChannel {
-                    scaler: Scaler::default(),
+                    scaler: -Scaler::default(),
                     ctrl_group_id: 0,
                     ctrl_channel_idx: ControllerOutputChannel::Roll as u8,
                 },
             ],
-            scaler: Scaler {
-                scale_p: 0.5,
-                scale_n: 0.5,
-                offset: 50.0,
-                min: 0.0,
-                max: 100.0,
-            },
+            scaler: Scaler::default(),
             bind_ctrl_group_id: 0,
-            output_channel_idx: 1,
+            output_channel_idx: 2,
         };
 
         let motor_3 = SumMixer {
@@ -102,50 +110,20 @@ impl Mixer {
                     ctrl_channel_idx: ControllerOutputChannel::Pitch as u8,
                 },
                 MixerChannel {
-                    scaler: -Scaler::default(),
-                    ctrl_group_id: 0,
-                    ctrl_channel_idx: ControllerOutputChannel::Roll as u8,
-                },
-            ],
-            scaler: Scaler {
-                scale_p: 0.5,
-                scale_n: 0.5,
-                offset: 50.0,
-                min: 0.0,
-                max: 100.0,
-            },
-            bind_ctrl_group_id: 0,
-            output_channel_idx: 2,
-        };
-
-        let motor_4 = SumMixer {
-            list: vec![
-                MixerChannel {
-                    scaler: Scaler::default(),
-                    ctrl_group_id: 0,
-                    ctrl_channel_idx: ControllerOutputChannel::Pitch as u8,
-                },
-                MixerChannel {
                     scaler: Scaler::default(),
                     ctrl_group_id: 0,
                     ctrl_channel_idx: ControllerOutputChannel::Roll as u8,
                 },
             ],
-            scaler: Scaler {
-                scale_p: 0.5,
-                scale_n: 0.5,
-                offset: 50.0,
-                min: 0.0,
-                max: 100.0,
-            },
+            scaler: Scaler::default(),
             bind_ctrl_group_id: 0,
             output_channel_idx: 3,
         };
 
+        self.mixers.push(motor_0);
         self.mixers.push(motor_1);
         self.mixers.push(motor_2);
         self.mixers.push(motor_3);
-        self.mixers.push(motor_4);
     }
 }
 
@@ -155,12 +133,12 @@ enum ControllerOutputChannel {
     Yaw,
 }
 
-struct Scaler {
-    scale_p: f32,
-    scale_n: f32,
-    offset: f32,
-    min: f32,
-    max: f32,
+pub struct Scaler {
+    pub scale_p: f32,
+    pub scale_n: f32,
+    pub offset: f32,
+    pub min: f32,
+    pub max: f32,
 }
 
 impl Default for Scaler {
@@ -190,7 +168,7 @@ impl Neg for Scaler {
 }
 
 impl Scaler {
-    fn scale(&self, input: f32) -> f32 {
+    pub fn scale(&self, input: f32) -> f32 {
         let scale_k;
         if input > 0.0 {
             scale_k = self.scale_p;
@@ -238,6 +216,8 @@ pub unsafe fn init_mixer(_argc: u32, _argv: *const &str) {
             mixers: Vec::new(),
             tx: msg.tx.clone(),
         };
+
+        ret.init_x_quadcopter_mixers();
 
         let msg_list = get_message_list().read().unwrap();
         for i in 0..CONTROLLER_OUTPUT_COUNT {

@@ -4,6 +4,7 @@ mod log;
 mod msg_echo;
 mod message;
 mod msg_define;
+mod pid;
 
 mod att_control;
 mod mixer;
@@ -15,9 +16,12 @@ use std::mem::MaybeUninit;
 use std::os::unix::net::{UnixStream, UnixListener};
 use std::env;
 use std::fs::remove_file;
+use std::ptr::null_mut;
 use std::sync::LazyLock;
+use att_control::init_att_control;
 use gazebo_actuator::init_gz_actuator;
 use gazebo_sim::init_gazebo_sim;
+use mixer::init_mixer;
 use rpos::module::Module;
 use rpos::libc;
 
@@ -52,11 +56,15 @@ unsafe extern "C" fn drop_specifidata(ptr:*mut libc::c_void){
 
 /* main for debug */
 fn main(){
-    // let a = ["sim_gz","/home/ncer/RustPilot/sim/quadcopter.toml"];
-    // init_gazebo_sim(2, a.as_ptr());
+    let a = ["sim_gz","/home/ncer/RustPilot/sim/quadcopter.toml"];
+    init_gazebo_sim(2, a.as_ptr());
 
     let a = ["gazebo_actuator"];
     init_gz_actuator(1,a.as_ptr());
+
+    unsafe{init_mixer(0,null_mut());}
+    init_att_control(0,null_mut());
+
     gz::transport::wait_for_shutdown();
 
 }
