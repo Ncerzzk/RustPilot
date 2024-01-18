@@ -61,7 +61,6 @@ impl Mixer {
                     ctrl_channel_idx: ControllerOutputChannel::Roll as u8,
                 },
             ],
-            scaler: Scaler::default(),
             bind_ctrl_group_id: 0,
             output_channel_idx: 0,
         };
@@ -69,7 +68,7 @@ impl Mixer {
         let motor_1 = SumMixer {
             list: vec![
                 MixerChannel {
-                    scaler: Scaler::default(),
+                    scaler: -Scaler::default(),
                     ctrl_group_id: 0,
                     ctrl_channel_idx: ControllerOutputChannel::Pitch as u8,
                 },
@@ -79,7 +78,6 @@ impl Mixer {
                     ctrl_channel_idx: ControllerOutputChannel::Roll as u8,
                 },
             ],
-            scaler: Scaler::default(),
             bind_ctrl_group_id: 0,
             output_channel_idx: 1,
         };
@@ -87,17 +85,16 @@ impl Mixer {
         let motor_2 = SumMixer {
             list: vec![
                 MixerChannel {
-                    scaler: -Scaler::default(),
+                    scaler: Scaler::default(),
                     ctrl_group_id: 0,
                     ctrl_channel_idx: ControllerOutputChannel::Pitch as u8,
                 },
                 MixerChannel {
-                    scaler: -Scaler::default(),
+                    scaler: Scaler::default(),
                     ctrl_group_id: 0,
                     ctrl_channel_idx: ControllerOutputChannel::Roll as u8,
                 },
             ],
-            scaler: Scaler::default(),
             bind_ctrl_group_id: 0,
             output_channel_idx: 2,
         };
@@ -110,12 +107,11 @@ impl Mixer {
                     ctrl_channel_idx: ControllerOutputChannel::Pitch as u8,
                 },
                 MixerChannel {
-                    scaler: Scaler::default(),
+                    scaler: -Scaler::default(),
                     ctrl_group_id: 0,
                     ctrl_channel_idx: ControllerOutputChannel::Roll as u8,
                 },
             ],
-            scaler: Scaler::default(),
             bind_ctrl_group_id: 0,
             output_channel_idx: 3,
         };
@@ -188,7 +184,6 @@ struct MixerChannel {
 
 struct SumMixer {
     list: Vec<MixerChannel>,
-    scaler: Scaler,
     bind_ctrl_group_id: u8,
     output_channel_idx: u8,
 }
@@ -200,7 +195,7 @@ impl SumMixer {
             let input = group.output.get(i.ctrl_channel_idx as usize).unwrap();
             acc + i.scaler.scale(*input)
         });
-        self.scaler.scale(ret)
+        ret
     }
 }
 
