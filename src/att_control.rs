@@ -1,9 +1,5 @@
 use rpos::{channel::Sender, pthread_scheduler::SchedulePthread};
-use std::{
-    os::raw::c_void,
-    ptr::{null, null_mut},
-    sync::Arc,
-};
+use std::{os::raw::c_void, ptr::null_mut, sync::Arc};
 
 use crate::{
     message::get_message_list,
@@ -64,19 +60,23 @@ fn att_control_main(ptr: *mut c_void) -> *mut c_void {
             None => {}
         }
 
-        let pitch = att_now[1];
-        let roll = att_now[0];
+        let pitch = att_now[0];
+        let roll = att_now[1];
         let yaw = att_now[2];
 
         let pitch_out = att_ctrler
             .pitch_controller
             .calcuate(att_target.pitch, pitch, 0.0025);
-        
-        let roll_out = att_ctrler.roll_controller.calcuate(att_target.roll, roll, 0.0025);
-        let mut output_all = [0.0;8];
+
+        let roll_out = att_ctrler
+            .roll_controller
+            .calcuate(att_target.roll, roll, 0.0025);
+        let mut output_all = [0.0; 8];
         output_all[0] = pitch_out;
         output_all[1] = roll_out;
-        att_ctrler.tx.send(ControllerOutputGroupMsg{ output:output_all});
+        att_ctrler
+            .tx
+            .send(ControllerOutputGroupMsg { output: output_all });
 
         sp.schedule_until(2500);
     }
