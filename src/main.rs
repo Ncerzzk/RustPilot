@@ -65,6 +65,8 @@ fn main(){
     unsafe{init_mixer(0,null_mut());}
     init_att_control(0,null_mut());
 
+    unsafe {assert_eq!(libc::mlockall(1 | 2),0)};
+
     gz::transport::wait_for_shutdown();
 
 }
