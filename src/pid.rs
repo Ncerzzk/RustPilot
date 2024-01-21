@@ -10,8 +10,7 @@ pub struct PIDController {
 }
 
 impl PIDController {
-    pub fn calcuate(&mut self, target: f32, now: f32, dt: f32) -> f32 {
-        let err = target - now;
+    pub fn calcuate(&mut self, err:f32, dt: f32) -> f32 {
         self.i_err += err * dt;
         let out = err * self.kp + self.i_err * self.ki + (err - self.last_err) / dt * self.kd;
         self.last_err = err;

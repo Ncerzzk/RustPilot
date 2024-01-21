@@ -64,8 +64,12 @@ impl GazeboSim {
 
         let rotate_q: LazyCell<quaternion_core::Quaternion<f32>> =
             LazyCell::new(|| quaternion_core::from_axis_angle([0.0, 0.0, 1.0], -PI / 2.0));
-        
-        let imu_q = quaternion_core::mul(imu_q,*rotate_q); // rotate to align axis of gazebo and ours        
+
+        let imu_q = quaternion_core::mul(imu_q,*rotate_q); // rotate to align axis of gazebo and ours
+        /*
+        imu_q is the rotate quaternion from gazebo axis to body axis 
+        rotate_q is the rotate quaternion from gazebo axis to world axis(our defination): x -> -y_old ,  y -> x_old. 
+        */
 
         self.attitude_tx.send(AttitudeMsg {
             w: imu_q.0,
