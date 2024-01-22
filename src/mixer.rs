@@ -34,8 +34,6 @@ impl Mixer {
                 publish.push((i.output_channel_idx, i.calcuate(&self.controller_outputs)));
             }
         }
-        println!("{:?}",msg);
-        println!("{:?}",publish); 
         self.tx.send(MixerOutputMsg {
             output: Box::new(publish),
         });

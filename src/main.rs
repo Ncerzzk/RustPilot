@@ -9,6 +9,7 @@ mod pid;
 mod att_control;
 mod mixer;
 mod gazebo_actuator;
+mod imu_update;
 
 use std::ffi::CStr;
 use std::io::{Read, Write};
@@ -16,11 +17,12 @@ use std::mem::MaybeUninit;
 use std::os::unix::net::{UnixStream, UnixListener};
 use std::env;
 use std::fs::remove_file;
-use std::ptr::null_mut;
+use std::ptr::{null_mut, null};
 use std::sync::LazyLock;
 use att_control::init_att_control;
 use gazebo_actuator::init_gz_actuator;
 use gazebo_sim::init_gazebo_sim;
+use imu_update::init_imu_update;
 use mixer::init_mixer;
 use rpos::module::Module;
 use rpos::libc;
@@ -64,6 +66,8 @@ fn main(){
 
     unsafe{init_mixer(0,null_mut());}
     init_att_control(0,null_mut());
+
+    init_imu_update(0,null());
 
     unsafe {assert_eq!(libc::mlockall(1 | 2),0)};
 

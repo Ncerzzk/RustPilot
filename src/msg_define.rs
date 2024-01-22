@@ -2,7 +2,7 @@ use quaternion_core::Quaternion;
 
 
 // Gyro message data, unit:rad/s
-#[derive(Debug,Clone,Copy)]
+#[derive(Debug,Clone,Copy,Default)]
 pub struct GyroMsg{
     pub x:f32,
     pub y:f32,
@@ -10,7 +10,7 @@ pub struct GyroMsg{
 }
 
 // Acc message data, unit:m/(s^2)
-#[derive(Debug,Clone,Copy)]
+#[derive(Debug,Clone,Copy,Default)]
 pub struct AccMsg{
     pub x:f32,
     pub y:f32,
