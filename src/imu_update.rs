@@ -1,23 +1,19 @@
 use std::{
-    default,
     ffi::c_void,
-    iter::Enumerate,
     ptr::null_mut,
-    sync::{Arc, LazyLock, OnceLock},
+    sync::Arc,
 };
 
-use gz::{
-    msgs::{header::Header, subscribe::Subscribe, time::Time},
-    transport::Publisher,
+use rpos::{
+    channel::{Receiver, Sender},
+    pthread_scheduler::SchedulePthread,
 };
-use gz_msgs_common::protobuf::MessageField;
-use rpos::{channel::Receiver, pthread_scheduler::SchedulePthread};
 
 use quaternion_core::Quaternion as Q;
 
 use crate::{
     message::get_message_list,
-    msg_define::{AccMsg, GyroMsg},
+    msg_define::{AccMsg, AttitudeMsg, GyroMsg},
 };
 
 struct IMUUpdate {
@@ -35,11 +31,14 @@ fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
         acc_rx: msg_list.get_message("acc").unwrap().rx.clone(),
     };
 
+    let q_tx: Sender<AttitudeMsg> = msg_list.get_message("attitude").unwrap().tx.clone();
+    let mut q_rx_debug: Receiver<AttitudeMsg> = msg_list.get_message("attitude").unwrap().rx.clone();
+
     const IMU_UPDATE_T: f32 = 0.002;
     const IMU_UPDATE_HALF_T: f32 = IMU_UPDATE_T / 2.0;
     const IMU_UPDATE_T_US: i64 = (IMU_UPDATE_T * 1000.0 * 1000.0) as i64;
-    const IMU_P: f32 = 0.5;
-    const IMU_I: f32 = 0.001;
+    const IMU_P: f32 = 2.0;
+    const IMU_I: f32 = 0.01;
 
     let mut acc_data: [f32; 3] = [0.0; 3];
     let mut gyro_data: [f32; 3] = [0.0; 3];
@@ -56,14 +55,16 @@ fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
 
         let acc_normed = quaternion_core::normalize(acc_data);
 
-        let acc_rotate = quaternion_core::point_rotation(q, [0.0, 0.0, 1.0]);
+        let acc_rotate = quaternion_core::frame_rotation(q, [0.0, 0.0, 1.0]);
 
         let mut err = quaternion_core::cross(acc_normed, acc_rotate); // use the product of cross as the err
         for (index, err_item) in err.iter_mut().enumerate() {
-            err_i[index] += (*err_item) * IMU_UPDATE_T * IMU_I;
-            *err_item = (*err_item) * IMU_P + err_i[index];
+            if err_item.is_normal() {
+                err_i[index] += (*err_item) * IMU_UPDATE_T * IMU_I;
+                *err_item = (*err_item) * IMU_P + err_i[index];
 
-            gyro_data[index] += *err_item;
+                gyro_data[index] += *err_item;
+            }
         }
 
         q.0 += (-q.1[0] * gyro_data[0] - q.1[1] * gyro_data[1] - q.1[2] * gyro_data[2])
@@ -75,7 +76,18 @@ fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
         q.1[2] += (q.0 * gyro_data[2] + q.1[0] * gyro_data[1] - q.1[1] * gyro_data[0])
             * IMU_UPDATE_HALF_T;
 
-
+        let mut x = AttitudeMsg{w:0.0,x:0.0,y:0.0,z:0.0};
+        if let Some(msg) = q_rx_debug.try_read(){
+            x = msg;
+        }
+        //let x_q = quaternion_core::mul(q,quaternion_core::from_axis_angle([0.0, 0.0, 1.0], -3.14159 / 2.0));
+        println!("cal:{:?} , gazebo:{:?}",q,x);
+        // q_tx.send(AttitudeMsg {
+        //     w: q.0,
+        //     x: q.1[0],
+        //     y: q.1[1],
+        //     z: q.1[2],
+        // });
         sp.schedule_until(IMU_UPDATE_T_US);
     }
     null_mut()
