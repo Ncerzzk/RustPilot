@@ -5,11 +5,13 @@ mod msg_echo;
 mod message;
 mod msg_define;
 mod pid;
+mod param;
 
 mod att_control;
 mod mixer;
 mod gazebo_actuator;
 mod imu_update;
+mod elrs;
 
 use std::ffi::CStr;
 use std::io::{Read, Write};
@@ -24,6 +26,7 @@ use gazebo_actuator::init_gz_actuator;
 use gazebo_sim::init_gazebo_sim;
 use imu_update::init_imu_update;
 use mixer::init_mixer;
+use param::PARAMS;
 use rpos::module::Module;
 use rpos::libc;
 
