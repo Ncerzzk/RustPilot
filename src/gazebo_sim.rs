@@ -31,10 +31,10 @@ struct GzSubInfo {
 }
 
 impl GazeboSim {
-    fn update_time(self: &Arc<Self>, s: WorldStatistics) {
+    fn update_time(self: &Arc<Self>, s: gz::msgs::clock::Clock) {
         let t = Timespec {
-            nsec: s.sim_time.nsec as i64,
-            sec: s.sim_time.sec,
+            nsec: s.sim.nsec as i64,
+            sec: s.sim.sec,
         };
         lock_step_update_time(t);
     }
@@ -114,10 +114,7 @@ impl GazeboSim {
             };
             a
         });
-        assert!(sim.subscribe(
-            &format!("/world/{}/stats", sim.gz_sub_info.world_name),
-            Self::update_time
-        ));
+        assert!(sim.subscribe("/clock", Self::update_time));
         assert!(sim.subscribe("/imu", Self::update_imu));
         sim
     }
