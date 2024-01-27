@@ -18,7 +18,7 @@ mod imu_update;
 mod elrs;
 
 use std::ffi::CStr;
-use std::io::{Read, Write};
+use std::io::{Read, Write, BufReader, BufRead};
 use std::mem::MaybeUninit;
 use std::os::unix::net::{UnixStream, UnixListener};
 use std::env;
@@ -27,6 +27,8 @@ use std::ptr::{null_mut, null};
 use std::sync::LazyLock;
 use rpos::module::Module;
 use rpos::libc;
+
+use clap::Parser;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -45,7 +47,6 @@ pub static PTHREAD_KEY:LazyLock<u32>= LazyLock::new(||{
 fn set_thread_specifidata(data:ThreadSpecificData){
     let data = Box::new(data);
     let data = Box::leak(data);
-
     unsafe{
         rpos::libc::pthread_setspecific(*PTHREAD_KEY, &*data as *const ThreadSpecificData as *const libc::c_void );
     } 
@@ -53,7 +54,7 @@ fn set_thread_specifidata(data:ThreadSpecificData){
 
 unsafe extern "C" fn drop_specifidata(ptr:*mut libc::c_void){
     unsafe{
-        let _ = Box::from_raw(ptr as *mut ThreadSpecificData);
+        drop(Box::from_raw(ptr as *mut ThreadSpecificData));
     };
 }
 
@@ -75,19 +76,39 @@ unsafe extern "C" fn drop_specifidata(ptr:*mut libc::c_void){
 //     gz::transport::wait_for_shutdown();
 
 // }
+#[derive(Parser)]
+#[command(author, version, about, long_about = None, arg_required_else_help(true))]
+struct Cli{
+
+    #[arg(long)]
+    server:bool,
+
+    #[arg(short,long)]
+    start_script:Option<String>,
+
+    /// commands send by clients.
+    #[arg(value_name="client commands")]
+    other:Option<Vec<String>>
+}
 
 fn main() {
-    let is_server;
+    if std::env::current_exe().unwrap().file_stem().unwrap() == "rust_pilot"{
+        println!("yes! {:?}",std::env::args().next().unwrap());
+    }
+    let cli = Cli::parse();
+
     let args:Vec<String> = env::args().collect();
     const SOCKET_PATH: &str = "./rpsocket";
-    if args.len()> 1 && args[1] == "--server"{
-        is_server = true;
-    }else{
-        is_server = false;
-    }
 
-    
-    if is_server{
+    if cli.server{
+        let hello_txt = r"
+        ____                    __     ____     _     __          __
+        / __ \  __  __   _____  / /_   / __ \   (_)   / /  ____   / /_
+       / /_/ / / / / /  / ___/ / __/  / /_/ /  / /   / /  / __ \ / __/
+      / _, _/ / /_/ /  (__  ) / /_   / ____/  / /   / /  / /_/ // /_
+     /_/ |_|  \__,_/  /____/  \__/  /_/      /_/   /_/   \____/ \__/";  // slant
+        println!("{}",hello_txt);
+        
         _ = remove_file(SOCKET_PATH);
         let stream = UnixListener::bind(SOCKET_PATH).unwrap();
         
@@ -115,15 +136,17 @@ fn main() {
 
         } 
     }else{
-        let mut stream = UnixStream::connect(SOCKET_PATH).unwrap(); // panic if the server is not runing.
-        let other_args = args[1..].join(" ");
+        let mut stream = UnixStream::connect(SOCKET_PATH).expect("please start a rustpilot server first!\n");// panic if the server is not runing.
+        let other_args = cli.other.unwrap().join(" ");
         stream.write_all(other_args.as_bytes()).unwrap();
-        stream.flush().unwrap();
-        let mut out = String::new();
-        stream.read_to_string(&mut out).unwrap(); // TODO: change to read output immediately
-        println!("{}",out);
-    }
 
-    println!("Hello, world!");
+        let mut bufreader = BufReader::new(stream);
+        let mut str_out:String = String::new();
+        while let Ok(n) = bufreader.read_line(&mut str_out){
+            if n == 0{break;}
+            println!("{}",str_out);
+            str_out.clear();
+        }
+    }
 
 }
