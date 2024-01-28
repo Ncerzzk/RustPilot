@@ -1,0 +1,16 @@
+
+[[mixer]]
+control_group = 0
+output_channel = 0
+sum = [
+    { offset = 0, max = 100, min = 0, channel = 50, p = 1, n = 1, chn = 0 },
+    { offset = 0, max = 100, min = 0, channel = 50, p = 1, n = 1, chn = 1 },
+]
+
+[[mixer]]
+control_group = 0
+output_channel = 1
+sum = [
+    { offset = 0, max = 100, min = 0, channel = 50, p = 1, n = 1, chn = 0 },
+    { offset = 0, max = 100, min = 0, channel = 50, p = 1, n = 1, chn = 1 },
+]
