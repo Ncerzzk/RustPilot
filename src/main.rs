@@ -92,9 +92,6 @@ struct Cli{
 }
 
 fn main() {
-    if std::env::current_exe().unwrap().file_stem().unwrap() == "rust_pilot"{
-        println!("yes! {:?}",std::env::args().next().unwrap());
-    }
     let cli = Cli::parse();
 
     let args:Vec<String> = env::args().collect();
