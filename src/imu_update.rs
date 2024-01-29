@@ -21,7 +21,6 @@ struct IMUUpdate {
     acc_rx: Receiver<AccMsg>,
 }
 
-fn update_time(s: gz::msgs::imu::IMU) {}
 
 fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
     let sp = unsafe { Arc::from_raw(ptr as *const SchedulePthread) };
