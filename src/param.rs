@@ -1,43 +1,67 @@
-use std::{any::Any, collections::HashMap, str::FromStr, sync::OnceLock};
+use core::panic;
+use std::{collections::HashMap, str::FromStr, sync::OnceLock};
 
-pub trait ParameterDataType {}
+use clap::{Args, Command};
 
-impl ParameterDataType for u32 {}
-impl ParameterDataType for i32 {}
-impl ParameterDataType for f32 {}
+use crate::thread_logln;
+
+#[derive(Debug)]
+enum ParameterData {
+    Int(i32),
+    Float(f32),
+}
+
+impl ParameterData {
+    fn get_i32(&self) -> i32 {
+        if let Self::Int(x) = self {
+            x.clone()
+        } else {
+            panic!("this param is not i32!")
+        }
+    }
+
+    fn get_f32(&self) -> f32 {
+        if let Self::Float(x) = self {
+            x.clone()
+        } else {
+            panic!("this param is not f32!")
+        }
+    }
+}
 
 pub struct Parameter {
     name: String,
-    data: Option<i32>,
-    default: i32,
+    data: Option<ParameterData>,
+    default: ParameterData,
+}
+
+#[derive(Args, Debug)]
+struct Cli {
+    #[arg(short, long, value_name = "param_name")]
+    get: Option<String>,
+
+    #[arg(short, long, value_name = "param_name")]
+    set: Option<String>,
+
+    #[arg(short, long, requires = "set")]
+    value: Option<String>,
 }
 
 impl Parameter {
-    pub fn set<T>(&mut self, val: T)
-    where
-        T: ParameterDataType,
-    {
-        let ptr = &mut self.data as *mut Option<i32> as *mut Option<T>;
-
-        unsafe {
-            *ptr = Some(val);
-        }
+    pub fn set(&mut self, val: ParameterData) {
+        self.data = Some(val);
     }
 
     /*
        return the val of this parameter.
        if the parameter val is None, then return the default value.
     */
-    pub fn get<T>(&self) -> T
-    where
-        T: ParameterDataType + Copy,
-    {
+
+    pub fn get(&self) -> &ParameterData {
         if self.data.is_none() {
-            let ptr = &self.default as *const i32 as *const T;
-            unsafe { *ptr }
+            &self.default
         } else {
-            let ptr = &self.data as *const Option<i32> as *const Option<T>;
-            unsafe { (*ptr).unwrap() }
+            &self.data.as_ref().unwrap()
         }
     }
 
@@ -57,54 +81,86 @@ impl ParameterList {
         }
     }
 
-    pub fn add<T>(&mut self, name:&str, val: Option<T>, default: T)
-    where
-        T: ParameterDataType,
-    {
+    pub fn add(&mut self, name: &str, default: ParameterData) {
         let mut param = Parameter {
             name: name.to_string(),
             data: None,
-            default: 0,
+            default,
         };
-        if val.is_some() {
-            param.set(val.unwrap());
-        }
-        let default_ptr = &mut param.default as *mut i32 as *mut T;
-        unsafe {
-            *default_ptr = default;
-        }
         self.data.insert(name.to_string(), param);
     }
 
-    pub fn get_val<T>(&self, name: &str) -> Option<T>
-    where
-        T: ParameterDataType + Copy,
-    {
+    pub fn get_val(&self, name: &str) -> Option<&ParameterData> {
         let a = self.data.get(name);
 
         match a {
-            Some(param) => Some(param.get::<T>()),
+            Some(param) => Some(param.get()),
             None => None,
         }
     }
 
-    pub fn get(&mut self,name:&str) ->Option<&mut Parameter>{
+    pub fn get(&mut self, name: &str) -> Option<&mut Parameter> {
         self.data.get_mut(name)
     }
 }
 
-pub static mut PARAMS: OnceLock<ParameterList> = OnceLock::new();
+static mut PARAMS: OnceLock<ParameterList> = OnceLock::new();
 
-fn param_main(argc:u32,argv: *const &str){
+pub fn params_list() -> &'static ParameterList {
+    unsafe { PARAMS.get().unwrap() }
+}
 
+pub fn param_list_mut() -> &'static mut ParameterList {
+    unsafe { PARAMS.get_mut().unwrap() }
+}
+
+fn param_main(argc: u32, argv: *const &str) {
+    let cli = Command::new("param");
+    let mut cli = Cli::augment_args(cli).disable_help_flag(true);
+    let argv = unsafe { std::slice::from_raw_parts(argv, argc as usize) };
+
+    let matches = cli.clone().try_get_matches_from(argv);
+
+    if matches.is_err(){
+        let help_str = cli.render_help();
+        thread_logln!("{}",help_str);
+        return ;
+    }
+
+    let matches = matches.unwrap();
+    let get = matches.get_one::<String>("get");
+
+    if let Some(name) = get {
+        thread_logln!("param:{}  val:{:?}", name, params_list().get_val(name));
+    }
+
+    if let Some(name) = matches.get_one::<String>("set") {
+        let value = matches.get_one::<String>("value");
+        let param = param_list_mut().get(name);
+        if param.is_some() {
+            match value {
+                Some(v) => {
+                    if let Ok(x) = i32::from_str(v) {
+                        param.unwrap().set(ParameterData::Int(x));
+                    } else if let Ok(x) = f32::from_str(v) {
+                        param.unwrap().set(ParameterData::Float(x));
+                    }
+                }
+                None => thread_logln!("You should provide a value to write into parameter!"),
+            }
+        } else {
+            thread_logln!("Could not find this parameter:{}!", name);
+        }
+    }
 }
 
 #[rpos::ctor::ctor]
 fn register() {
-    unsafe{let _ = PARAMS.set(ParameterList::new());};
+    unsafe {
+        let _ = PARAMS.set(ParameterList::new());
+    };
     rpos::module::Module::register("param", param_main);
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -120,42 +176,46 @@ mod tests {
     }
 
     #[test]
-    fn test_parameters_add(){
+    fn test_parameters_add() {
         let mut params = ParameterList::new();
-        params.add("gyro_set", None, 0 as i32);
+        params.add("gyro_set", ParameterData::Int(0));
 
-        assert_eq!(params.get_val::<i32>("gyro_set").unwrap(),0);
-        assert!(params.get_val::<i32>("undefined").is_none());
+        let val = params.get_val("gyro_set").unwrap();
+        assert_eq!(val.get_i32(), 0);
+        assert!(params.get_val("undefined").is_none());
 
         let x = params.get("gyro_set").unwrap();
-        x.set(50);
+        x.set(ParameterData::Int(50));
 
-        assert_eq!(x.get::<i32>(),50);
-        assert_eq!(params.get_val::<i32>("gyro_set").unwrap(),50);
+        assert_eq!(x.data.as_ref().unwrap().get_i32(), 50);
+        assert_eq!(params.get_val("gyro_set").unwrap().get_i32(), 50);
     }
 
     #[test]
-    fn test_parameters_f32(){
+    fn test_parameters_f32() {
         let mut params = ParameterList::new();
-        params.add("f32_test",Some(1.0),0.5);
-        let val = params.get_val::<f32>("f32_test").unwrap();
-        assert!(val > 0.9999);
-        assert!(val < 1.0001);
+        params.add("f32_test", ParameterData::Float(0.5));
+
+        params
+            .get("f32_test")
+            .unwrap()
+            .set(ParameterData::Float((1.0)));
+        let val = params.get_val("f32_test").unwrap();
+        assert!(val.get_f32() > 0.9999);
+        assert!(val.get_f32() < 1.0001);
 
         params.get("f32_test").unwrap().reset();
-        let val = params.get_val::<f32>("f32_test").unwrap();
-        assert!(val > 0.49999);
-        assert!(val < 0.50001);
+        let val = params.get_val("f32_test").unwrap();
+        assert!(val.get_f32() > 0.49999);
+        assert!(val.get_f32() < 0.50001);
     }
 
     #[test]
-    fn test_static_params(){
+    fn test_static_params() {
         let list = unsafe { PARAMS.get_mut().unwrap() };
-        list.add("test", None, 0);
+        list.add("test", ParameterData::Int(0));
 
-        let val = unsafe { PARAMS.get().unwrap().get_val::<i32>("test").unwrap() };
-        assert_eq!(val,0);
-
+        let val = unsafe { PARAMS.get().unwrap().get_val("test").unwrap() };
+        assert_eq!(val.get_i32(), 0);
     }
-
 }
