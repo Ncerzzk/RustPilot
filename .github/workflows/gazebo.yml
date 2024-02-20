@@ -22,7 +22,6 @@ jobs:
       with:
         packages: libgz-sim8-dev
         version: 1.0
-        debug: true
     - uses: actions/checkout@v3
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
@@ -35,4 +34,4 @@ jobs:
     - name: Build
       run: cargo build --verbose --features gzsim
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test RUST_TEST_THREADS=1 --verbose
