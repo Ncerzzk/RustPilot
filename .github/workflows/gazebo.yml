@@ -18,7 +18,7 @@ jobs:
     - name: Cache APT Packages
       uses: awalsh128/cache-apt-pkgs-action@v1.4.1
       with:
-        packages: libgz-sim*-dev
+        packages: libgz-sim*
     - uses: actions/checkout@v3
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
