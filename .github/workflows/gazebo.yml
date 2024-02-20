@@ -1,0 +1,37 @@
+name: BuildWithGazebo
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: update apt
+      run: sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list' && wget http://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add - && sudo apt-get update
+    - name: Cache APT Packages
+      uses: awalsh128/cache-apt-pkgs-action@v1.4.1
+      with:
+        packages: libgz-sim8-dev
+        version: 1.0
+    - uses: actions/checkout@v3
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+            toolchain: nightly
+            override: true
+            components: rustfmt, clippy
+    - name: submodule
+      run: git submodule update --init
+    - name: Build
+      run: cargo build --verbose --features gzsim
+    - name: Run tests
+      run: RUST_TEST_THREADS=1 cargo test --verbose
