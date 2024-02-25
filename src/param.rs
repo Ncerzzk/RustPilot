@@ -2,8 +2,8 @@ use core::panic;
 use std::{collections::HashMap, str::FromStr, sync::OnceLock};
 
 use clap::{Args, Command};
+use rpos::thread_logln;
 
-use crate::thread_logln;
 
 #[derive(Debug)]
 enum ParameterData {

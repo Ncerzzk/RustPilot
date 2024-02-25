@@ -9,13 +9,11 @@ use rpos::ctor::ctor;
 use rpos::hrt::Timespec;
 use rpos::lock_step::lock_step_update_time;
 use rpos::module::Module;
-use rpos::workqueue::{WorkItem, WorkQueue};
 use std::cell::LazyCell;
 use std::f32::consts::PI;
 use std::{cell::RefCell, os::raw::c_void, sync::Arc, time::Duration};
 
 struct GazeboSim {
-    workitem: Arc<WorkItem>,
     gz_node: RefCell<gz::transport::Node>,
     pose_index: RefCell<i32>,
     gz_sub_info: GzSubInfo,
@@ -79,14 +77,13 @@ impl GazeboSim {
         });
     }
 
-    fn new(wq: &Arc<WorkQueue>, toml_filename: &str) -> Arc<Self> {
+    fn new(toml_filename: &str) -> Arc<Self> {
         let sub_info: GzSubInfo =
             toml::from_str(&std::fs::read_to_string(toml_filename).unwrap()).unwrap();
         let msg_list = get_message_list();
 
         let sim = Arc::new_cyclic(|weak| {
             let a = GazeboSim {
-                workitem: WorkItem::new(wq, "gazebo", weak.as_ptr() as *mut Any, run),
                 gz_node: RefCell::new(gz::transport::Node::new().unwrap()),
                 pose_index: RefCell::new(-1),
                 gz_sub_info: sub_info,
@@ -147,19 +144,14 @@ impl GazeboSim {
     }
 }
 
-fn run(ptr: *mut c_void) {}
-
 pub fn init_gazebo_sim(_argc: u32, _argv: *const &str) {
     assert!(_argc == 2);
     let argv = unsafe { slice::from_raw_parts(_argv, _argc as usize) };
-
-    let wq = WorkQueue::new("sim", 8192, 98, false);
-
-    let sim = GazeboSim::new(&wq, argv[1]);
+    let sim = GazeboSim::new(argv[1]);
     println!("gz inited!");
 }
 
 #[ctor]
 fn register() {
-    Module::register("sim_gz", init_gazebo_sim);
+    Module::register("gazebo_sim", init_gazebo_sim);
 }
