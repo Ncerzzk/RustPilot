@@ -6,13 +6,12 @@ use std::{
 
 use rpos::{
     channel::{Receiver, Sender},
-    pthread_scheduler::SchedulePthread,
+    pthread_scheduler::SchedulePthread, msg::{get_new_rx_of_message, get_new_tx_of_message},
 };
 
 use quaternion_core::Quaternion as Q;
 
 use crate::{
-    message::get_message_list,
     msg_define::{AccMsg, AttitudeMsg, GyroMsg},
 };
 
@@ -24,14 +23,13 @@ struct IMUUpdate {
 
 fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
     let sp = unsafe { Arc::from_raw(ptr as *const SchedulePthread) };
-    let msg_list = get_message_list().read().unwrap();
     let mut wrapper = IMUUpdate {
-        gyro_rx: msg_list.get_message("gyro").unwrap().rx.clone(),
-        acc_rx: msg_list.get_message("acc").unwrap().rx.clone(),
+        gyro_rx: get_new_rx_of_message::<GyroMsg>("gyro").unwrap(),
+        acc_rx: get_new_rx_of_message::<AccMsg>("acc").unwrap(),
     };
 
-    let q_tx: Sender<AttitudeMsg> = msg_list.get_message("attitude").unwrap().tx.clone();
-    let mut q_rx_debug: Receiver<AttitudeMsg> = msg_list.get_message("attitude").unwrap().rx.clone();
+    let q_tx: Sender<AttitudeMsg> = get_new_tx_of_message("attitude").unwrap();
+    let mut q_rx_debug: Receiver<AttitudeMsg> = get_new_rx_of_message("attitude").unwrap();
 
     const IMU_UPDATE_T: f32 = 0.002;
     const IMU_UPDATE_HALF_T: f32 = IMU_UPDATE_T / 2.0;

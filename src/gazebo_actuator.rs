@@ -2,9 +2,9 @@ use std::sync::OnceLock;
 
 use gz::msgs::actuators::Actuators;
 use gz::transport::Publisher;
-use rpos::channel::Receiver;
+use rpos::{channel::Receiver, msg::get_new_rx_of_message};
 
-use crate::{message::get_message_list, mixer::Scaler, msg_define::MixerOutputMsg};
+use crate::{mixer::Scaler, msg_define::MixerOutputMsg};
 
 struct GazeboActuator {
     gz_node: gz::transport::Node,
@@ -50,9 +50,7 @@ pub fn init_gz_actuator(argc: u32, argv: *const &str) {
 
     let _ = unsafe { GAZEBO_ACTUATOR.set(gz_ac) };
 
-    let msg_list = get_message_list().read().unwrap();
-    let rx: Receiver<MixerOutputMsg> = msg_list.get_message("mixer_output").unwrap().rx.clone();
-
+    let rx: Receiver<MixerOutputMsg> = get_new_rx_of_message("mixer_output").unwrap();
     rx.register_callback("gz_actuator", |s| {
         GazeboActuator::mixer_output_callback(unsafe { GAZEBO_ACTUATOR.get_mut().unwrap() }, s)
     });

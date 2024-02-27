@@ -1,11 +1,11 @@
 use std::{ops::Neg, sync::OnceLock};
 
-use rpos::channel::Sender;
-
-use crate::{
-    message::get_message_list,
-    msg_define::{ControllerOutputGroupMsg, MixerOutputMsg},
+use rpos::{
+    channel::Sender,
+    msg::{get_new_rx_of_message, get_new_tx_of_message},
 };
+
+use crate::msg_define::{ControllerOutputGroupMsg, MixerOutputMsg};
 
 /*
     for implement now:
@@ -201,25 +201,23 @@ static mut MIXER: OnceLock<Mixer> = OnceLock::new();
 const CONTROLLER_OUTPUT_COUNT: u8 = 2;
 
 pub unsafe fn init_mixer(_argc: u32, _argv: *const &str) {
-    let msg_list = get_message_list().read().unwrap();
-    let msg = msg_list.get_message("mixer_output").unwrap();
     let _ = MIXER.get_or_init(|| {
         let mut ret = Mixer {
             controller_outputs: Vec::new(),
             mixers: Vec::new(),
-            tx: msg.tx.clone(),
+            tx: get_new_tx_of_message("mixer_output").unwrap(),
         };
 
         ret.init_x_quadcopter_mixers();
 
-        let msg_list = get_message_list().read().unwrap();
         for i in 0..CONTROLLER_OUTPUT_COUNT {
-            let msg = msg_list
-                .get_message::<ControllerOutputGroupMsg>(format!("controller_output{}", i).as_str())
-                .unwrap();
+            let rx = get_new_rx_of_message::<ControllerOutputGroupMsg>(
+                format!("controller_output{}", i).as_str(),
+            )
+            .unwrap();
             ret.controller_outputs
                 .push(ControllerOutputGroupMsg { output: [0.0; 8] });
-            msg.rx.register_callback(
+            rx.register_callback(
                 format!("mixer_listener{}", i).as_str(),
                 move |x: &ControllerOutputGroupMsg| {
                     MIXER.get_mut().unwrap().update_ctrl_outputs(i, x);
@@ -244,14 +242,10 @@ mod tests {
     use super::*;
 
     fn get_fake_controller_output_tx(group_id: u8) -> Sender<ControllerOutputGroupMsg> {
-        let msg = get_message_list().read().unwrap();
-        let tx = msg
-            .get_message::<ControllerOutputGroupMsg>(
-                format!("controller_output{}", group_id).as_str(),
-            )
-            .unwrap()
-            .tx
-            .clone();
+        let tx = get_new_tx_of_message::<ControllerOutputGroupMsg>(
+            format!("controller_output{}", group_id).as_str(),
+        )
+        .unwrap();
         tx
     }
     #[test]
@@ -272,12 +266,7 @@ mod tests {
     #[test]
     fn test_x_quadcoptermixer_calcute() {
         let ctrl_tx = get_fake_controller_output_tx(0);
-        let msg_list = get_message_list().read().unwrap();
-        let mut mixer_rx = msg_list
-            .get_message::<MixerOutputMsg>("mixer_output")
-            .unwrap()
-            .rx
-            .clone();
+        let mut mixer_rx = get_new_rx_of_message::<MixerOutputMsg>("mixer_output").unwrap();
         unsafe {
             init_mixer(0, null_mut());
             MIXER.get_mut().unwrap().init_x_quadcopter_mixers();

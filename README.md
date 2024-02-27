@@ -19,8 +19,8 @@
 
 ```
 git clone https://github.com/Ncerzzk/RustPilot.git
-git submodule update --init --recursive
 cd RustPilot
+git submodule update --init --recursive
 cargo build
 
 or 

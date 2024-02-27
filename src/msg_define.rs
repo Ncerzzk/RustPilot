@@ -1,4 +1,5 @@
 use quaternion_core::Quaternion;
+use rpos::msg::add_message;
 
 
 // Gyro message data, unit:rad/s
@@ -46,16 +47,29 @@ pub struct MixerOutputMsg{
     pub output:Box<Vec<(u8,f32)>>,
 }
 
+// Manual Control Input
+#[derive(Debug,Clone)]
+pub struct ManualControlMsg{
+    pub pitch:u32,
+    pub roll:u32,
+    pub thrust:u32,
+    pub direction:u32
+}
+
+impl ManualControlMsg{
+    pub const MAX:u32 = 10000;
+}
+
+
 #[rpos::ctor::ctor]
 fn register_msgs(){
-    let msg_list = crate::message::get_message_list();
-    let mut msg_list = msg_list.write().unwrap();
-    msg_list.add_message::<GyroMsg>("gyro");
-    msg_list.add_message::<AccMsg>("acc");
-    msg_list.add_message::<AttitudeMsg>("attitude");
-    msg_list.add_message::<AttitudeTargetEulerMsg>("att_target_euler");
-    msg_list.add_message::<ControllerOutputGroupMsg>("controller_output0");
-    msg_list.add_message::<ControllerOutputGroupMsg>("controller_output1");
-    msg_list.add_message::<MixerOutputMsg>("mixer_output");
+    add_message::<GyroMsg>("gyro");
+    add_message::<AccMsg>("acc");
+    add_message::<AttitudeMsg>("attitude");
+    add_message::<AttitudeTargetEulerMsg>("att_target_euler");
+    add_message::<ControllerOutputGroupMsg>("controller_output0");
+    add_message::<ControllerOutputGroupMsg>("controller_output1");
+    add_message::<MixerOutputMsg>("mixer_output");
+    add_message::<ManualControlMsg>("manual_control");
 }
 

@@ -1,4 +1,3 @@
-use crate::message::get_message_list;
 use crate::msg_define::*;
 use core::slice;
 use gz::msgs::any::Any;
@@ -9,6 +8,7 @@ use rpos::ctor::ctor;
 use rpos::hrt::Timespec;
 use rpos::lock_step::lock_step_update_time;
 use rpos::module::Module;
+use rpos::msg::get_new_tx_of_message;
 use std::cell::LazyCell;
 use std::f32::consts::PI;
 use std::{cell::RefCell, os::raw::c_void, sync::Arc, time::Duration};
@@ -80,34 +80,15 @@ impl GazeboSim {
     fn new(toml_filename: &str) -> Arc<Self> {
         let sub_info: GzSubInfo =
             toml::from_str(&std::fs::read_to_string(toml_filename).unwrap()).unwrap();
-        let msg_list = get_message_list();
 
         let sim = Arc::new_cyclic(|weak| {
             let a = GazeboSim {
                 gz_node: RefCell::new(gz::transport::Node::new().unwrap()),
                 pose_index: RefCell::new(-1),
                 gz_sub_info: sub_info,
-                gyro_tx: msg_list
-                    .read()
-                    .unwrap()
-                    .get_message("gyro")
-                    .unwrap()
-                    .tx
-                    .clone(),
-                acc_tx: msg_list
-                    .read()
-                    .unwrap()
-                    .get_message("acc")
-                    .unwrap()
-                    .tx
-                    .clone(),
-                attitude_tx: msg_list
-                    .read()
-                    .unwrap()
-                    .get_message("attitude")
-                    .unwrap()
-                    .tx
-                    .clone(),
+                gyro_tx: get_new_tx_of_message("gyro").unwrap(),
+                acc_tx: get_new_tx_of_message("acc").unwrap(),
+                attitude_tx: get_new_tx_of_message("attitude").unwrap(),
             };
             a
         });

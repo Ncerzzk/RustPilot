@@ -1,6 +1,5 @@
 #![feature(lazy_cell)]
 
-mod message;
 mod msg_define;
 mod pid;
 mod param;

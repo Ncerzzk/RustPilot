@@ -1,8 +1,7 @@
-use rpos::{channel::Sender, pthread_scheduler::SchedulePthread};
+use rpos::{channel::Sender, pthread_scheduler::SchedulePthread, msg::{get_new_rx_of_message, get_new_tx_of_message}};
 use std::{os::raw::c_void, ptr::null_mut, sync::Arc};
 
 use crate::{
-    message::get_message_list,
     msg_define::{AttitudeMsg, AttitudeTargetEulerMsg, ControllerOutputGroupMsg},
     pid::PIDController,
 };
@@ -40,21 +39,14 @@ fn get_attitude_distance(target: Q<f32>, now: Q<f32>) -> [f32; 3] {
 
 fn att_control_main(ptr: *mut c_void) -> *mut c_void {
     let sp = unsafe { Arc::from_raw(ptr as *const SchedulePthread) };
-    let msg = get_message_list().read().unwrap();
 
-    let att_target_msg = msg.get_message::<AttitudeTargetEulerMsg>("att_target_euler");
-    let mut att_target_rx = att_target_msg.unwrap().rx.clone();
-    let mut att_rx: rpos::channel::Receiver<AttitudeMsg> =
-        msg.get_message("attitude").unwrap().rx.clone();
+    let mut att_target_rx = get_new_rx_of_message::<AttitudeTargetEulerMsg>("att_target_euler").unwrap();
+    let mut att_rx= get_new_rx_of_message::<AttitudeMsg>("attitude").unwrap();
 
     let mut att_ctrler = AttitudeController {
         pitch_controller: PIDController::new(100.0, 0.0, 0.0),
         roll_controller: PIDController::new(100.0, 0.0, 0.0),
-        tx: msg
-            .get_message::<ControllerOutputGroupMsg>("controller_output0")
-            .unwrap()
-            .tx
-            .clone(),
+        tx: get_new_tx_of_message("controller_output0").unwrap()
     };
 
     let mut att_target_q: Q<f32> = (1.0, [0.0, 0.0, 0.0]);
