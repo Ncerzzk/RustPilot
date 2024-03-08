@@ -18,6 +18,7 @@ crsf = "0.1.0"
 
 
 [features]
+default = ["gzsim"]
 gzsim = ["rpos/lock_step_enabled","gz","gz-msgs-common"]
 
 [build-dependencies]

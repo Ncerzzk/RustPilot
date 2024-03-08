@@ -4,12 +4,13 @@ use std::{
     sync::Arc,
 };
 
+use gz::msgs::quaternion;
 use rpos::{
     channel::{Receiver, Sender},
     pthread_scheduler::SchedulePthread, msg::{get_new_rx_of_message, get_new_tx_of_message},
 };
 
-use quaternion_core::Quaternion as Q;
+use quaternion_core::{Quaternion as Q, QuaternionOps, normalize};
 
 use crate::{
     msg_define::{AccMsg, AttitudeMsg, GyroMsg},
@@ -73,6 +74,7 @@ fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
         q.1[2] += (q.0 * gyro_data[2] + q.1[0] * gyro_data[1] - q.1[1] * gyro_data[0])
             * IMU_UPDATE_HALF_T;
 
+        q = normalize(q);
         let mut x = AttitudeMsg{w:0.0,x:0.0,y:0.0,z:0.0};
         if let Some(msg) = q_rx_debug.try_read(){
             x = msg;

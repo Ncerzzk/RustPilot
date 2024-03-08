@@ -6,7 +6,7 @@ use rpos::thread_logln;
 
 
 #[derive(Debug)]
-enum ParameterData {
+pub enum ParameterData {
     Int(i32),
     Float(f32),
 }

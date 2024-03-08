@@ -66,15 +66,14 @@ fn register() {
 
 #[cfg(test)]
 mod tests {
-    use rpos::channel::Sender;
+    use rpos::{channel::Sender, msg::get_new_tx_of_message};
     use std::ptr::null_mut;
 
     use super::*;
 
     #[test]
     fn test_init_gz_actuator() {
-        let msg_list = get_message_list().read().unwrap();
-        let tx: Sender<MixerOutputMsg> = msg_list.get_message("mixer_output").unwrap().tx.clone();
+        let tx: Sender<MixerOutputMsg> = get_new_tx_of_message("mixer_output").unwrap();
 
         init_gz_actuator(0, null_mut());
 
