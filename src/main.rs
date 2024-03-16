@@ -9,6 +9,7 @@ mod gazebo_sim;
 #[cfg(feature = "gzsim")]
 mod gazebo_actuator;
 
+mod fake_linux_input;
 mod att_control;
 mod mixer;
 mod imu_update;
