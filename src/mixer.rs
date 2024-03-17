@@ -1,9 +1,10 @@
-use std::{ops::Neg, sync::OnceLock};
+use std::{io::Read, ops::Neg, path::Path, sync::OnceLock};
 
 use rpos::{
     channel::Sender,
     msg::{get_new_rx_of_message, get_new_tx_of_message},
 };
+use serde::{Deserialize, Serialize};
 
 use crate::msg_define::{ControllerOutputGroupMsg, MixerOutputMsg};
 
@@ -16,10 +17,12 @@ use crate::msg_define::{ControllerOutputGroupMsg, MixerOutputMsg};
     flow:
     controller -->   mixer --> actuator
 */
-
+#[derive(Serialize, Deserialize)]
 struct Mixer {
+    #[serde(skip)]
     controller_outputs: Vec<ControllerOutputGroupMsg>,
     mixers: Vec<SumMixer>,
+    #[serde(skip)]
     tx: Sender<MixerOutputMsg>,
 }
 
@@ -37,6 +40,26 @@ impl Mixer {
         self.tx.send(MixerOutputMsg {
             output: Box::new(publish),
         });
+    }
+
+    fn read_mixers_info_from_file<P>(&mut self, filepath: P) -> Result<(), ()>
+    where
+        P: AsRef<Path>,
+    {
+        let mut toml_str = String::new();
+        if let Ok(mut file) = std::fs::File::open(filepath) {
+            file.read_to_string(&mut toml_str).unwrap();
+            if let Ok(temp) = toml::from_str::<Mixer>(&toml_str) {
+                self.mixers = temp.mixers;
+            } else {
+                return Err(());
+            }
+        } else {
+            println!("no mixer file found!");
+            return Err(());
+        }
+
+        Ok(())
     }
 
     fn init_x_quadcopter_mixers(&mut self) {
@@ -127,6 +150,7 @@ enum ControllerOutputChannel {
     Yaw,
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Scaler {
     pub scale_p: f32,
     pub scale_n: f32,
@@ -174,12 +198,14 @@ impl Scaler {
     }
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct MixerChannel {
     scaler: Scaler,
     ctrl_group_id: u8,
     ctrl_channel_idx: u8,
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct SumMixer {
     list: Vec<MixerChannel>,
     bind_ctrl_group_id: u8,
@@ -200,7 +226,7 @@ impl SumMixer {
 static mut MIXER: OnceLock<Mixer> = OnceLock::new();
 const CONTROLLER_OUTPUT_COUNT: u8 = 2;
 
-pub unsafe fn init_mixer(_argc: u32, _argv: *const &str) {
+pub unsafe fn init_mixer(argc: u32, argv: *const &str) {
     let _ = MIXER.get_or_init(|| {
         let mut ret = Mixer {
             controller_outputs: Vec::new(),
@@ -208,7 +234,16 @@ pub unsafe fn init_mixer(_argc: u32, _argv: *const &str) {
             tx: get_new_tx_of_message("mixer_output").unwrap(),
         };
 
-        ret.init_x_quadcopter_mixers();
+        let path = std::slice::from_raw_parts(argv, argc as usize);
+        if argc == 2 {
+            println!("read mixer from {}.", path[1]);
+            ret.read_mixers_info_from_file(path[1]).unwrap();
+        } else if argc == 1 {
+            println!("use default x quadcopter mixer!");
+            ret.init_x_quadcopter_mixers();
+        } else {
+            panic!("error arg num of mixer!");
+        }
 
         for i in 0..CONTROLLER_OUTPUT_COUNT {
             let rx = get_new_rx_of_message::<ControllerOutputGroupMsg>(
@@ -235,7 +270,7 @@ fn register() {
 
 #[cfg(test)]
 mod tests {
-    use std::ptr::null_mut;
+    use std::{default, ptr::null_mut};
 
     use crate::mixer;
 
@@ -252,7 +287,7 @@ mod tests {
     fn test_init_mixer() {
         let tx = get_fake_controller_output_tx(0);
         unsafe {
-            init_mixer(0, null_mut());
+            init_mixer(1, null_mut());
             assert_eq!(MIXER.get().unwrap().controller_outputs.len(), 2);
 
             tx.send(ControllerOutputGroupMsg { output: [1.0; 8] });
@@ -268,11 +303,37 @@ mod tests {
         let ctrl_tx = get_fake_controller_output_tx(0);
         let mut mixer_rx = get_new_rx_of_message::<MixerOutputMsg>("mixer_output").unwrap();
         unsafe {
-            init_mixer(0, null_mut());
+            init_mixer(1, null_mut());
             MIXER.get_mut().unwrap().init_x_quadcopter_mixers();
         }
 
         ctrl_tx.send(ControllerOutputGroupMsg { output: [50.0; 8] });
         println!("{:?}", mixer_rx.read())
+    }
+
+    #[test]
+    fn test_mixer2toml() {
+        unsafe {
+            init_mixer(1, null_mut());
+        }
+        println!(
+            "{}",
+            toml::to_string_pretty(unsafe { &(MIXER.get().unwrap()) }).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_toml2mixer() {
+        unsafe {
+            init_mixer(1, null_mut());
+            let origin = format!("{:?}", MIXER.get().unwrap().mixers);
+            MIXER
+                .get_mut()
+                .unwrap()
+                .read_mixers_info_from_file("gz_mixer.toml")
+                .unwrap();
+            let new = format!("{:?}", MIXER.get().unwrap().mixers);
+            assert_eq!(origin, new);
+        }
     }
 }

@@ -1,16 +1,103 @@
+[[mixers]]
+bind_ctrl_group_id = 0
+output_channel_idx = 0
 
-[[mixer]]
-control_group = 0
-output_channel = 0
-sum = [
-    { offset = 0, max = 100, min = 0, channel = 50, p = 1, n = 1, chn = 0 },
-    { offset = 0, max = 100, min = 0, channel = 50, p = 1, n = 1, chn = 1 },
-]
+[[mixers.list]]
+ctrl_group_id = 0
+ctrl_channel_idx = 0
 
-[[mixer]]
-control_group = 0
-output_channel = 1
-sum = [
-    { offset = 0, max = 100, min = 0, channel = 50, p = 1, n = 1, chn = 0 },
-    { offset = 0, max = 100, min = 0, channel = 50, p = 1, n = 1, chn = 1 },
-]
+[mixers.list.scaler]
+scale_p = 1.0
+scale_n = 1.0
+offset = 0.0
+min = -100.0
+max = 100.0
+
+[[mixers.list]]
+ctrl_group_id = 0
+ctrl_channel_idx = 1
+
+[mixers.list.scaler]
+scale_p = -1.0
+scale_n = -1.0
+offset = 0.0
+min = -100.0
+max = 100.0
+
+[[mixers]]
+bind_ctrl_group_id = 0
+output_channel_idx = 1
+
+[[mixers.list]]
+ctrl_group_id = 0
+ctrl_channel_idx = 0
+
+[mixers.list.scaler]
+scale_p = -1.0
+scale_n = -1.0
+offset = 0.0
+min = -100.0
+max = 100.0
+
+[[mixers.list]]
+ctrl_group_id = 0
+ctrl_channel_idx = 1
+
+[mixers.list.scaler]
+scale_p = 1.0
+scale_n = 1.0
+offset = 0.0
+min = -100.0
+max = 100.0
+
+[[mixers]]
+bind_ctrl_group_id = 0
+output_channel_idx = 2
+
+[[mixers.list]]
+ctrl_group_id = 0
+ctrl_channel_idx = 0
+
+[mixers.list.scaler]
+scale_p = 1.0
+scale_n = 1.0
+offset = 0.0
+min = -100.0
+max = 100.0
+
+[[mixers.list]]
+ctrl_group_id = 0
+ctrl_channel_idx = 1
+
+[mixers.list.scaler]
+scale_p = 1.0
+scale_n = 1.0
+offset = 0.0
+min = -100.0
+max = 100.0
+
+[[mixers]]
+bind_ctrl_group_id = 0
+output_channel_idx = 3
+
+[[mixers.list]]
+ctrl_group_id = 0
+ctrl_channel_idx = 0
+
+[mixers.list.scaler]
+scale_p = -1.0
+scale_n = -1.0
+offset = 0.0
+min = -100.0
+max = 100.0
+
+[[mixers.list]]
+ctrl_group_id = 0
+ctrl_channel_idx = 1
+
+[mixers.list.scaler]
+scale_p = -1.0
+scale_n = -1.0
+offset = 0.0
+min = -100.0
+max = 100.0
