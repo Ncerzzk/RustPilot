@@ -234,8 +234,8 @@ pub unsafe fn init_mixer(argc: u32, argv: *const &str) {
             tx: get_new_tx_of_message("mixer_output").unwrap(),
         };
 
-        let path = std::slice::from_raw_parts(argv, argc as usize);
         if argc == 2 {
+            let path = std::slice::from_raw_parts(argv, argc as usize);
             println!("read mixer from {}.", path[1]);
             ret.read_mixers_info_from_file(path[1]).unwrap();
         } else if argc == 1 {
