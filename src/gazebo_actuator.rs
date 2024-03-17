@@ -16,7 +16,13 @@ impl GazeboActuator {
     #[inline(always)]
     fn mixer_output_callback(&mut self, msg: &MixerOutputMsg) {
         let mut v: Vec<f64> = Vec::new();
-        for (_, val) in &*msg.output {
+        let mut temp_msg = msg.clone();
+        // sort msg by output channel id
+        temp_msg.output.sort_by(|a,b|{
+            a.0.cmp(&b.0)
+        });
+
+        for (_, val) in &*temp_msg.output {
             v.push(self.scaler.scale(val + 0.0) as f64);
         }
         let _ = self.publisher.publish(&Actuators {
