@@ -13,6 +13,7 @@ mod fake_linux_input;
 mod att_control;
 mod mixer;
 mod imu_update;
+mod elrs;
 
 use std::ffi::CStr;
 use std::io::{Read, Write, BufReader, BufRead};

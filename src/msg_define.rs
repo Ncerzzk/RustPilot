@@ -56,6 +56,11 @@ pub struct ManualControlMsg{
     pub direction:u32
 }
 
+#[derive(Debug,Clone)]
+pub struct RcInputMsg{
+    pub channel_vals:[u16;8]
+}
+
 impl ManualControlMsg{
     pub const MAX:u32 = 10000;
 }
@@ -71,5 +76,6 @@ fn register_msgs(){
     add_message::<ControllerOutputGroupMsg>("controller_output1");
     add_message::<MixerOutputMsg>("mixer_output");
     add_message::<ManualControlMsg>("manual_control");
+    add_message::<RcInputMsg>("rc_input");
 }
 

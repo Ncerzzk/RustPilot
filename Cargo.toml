@@ -13,9 +13,13 @@ toml = "0.8.8"
 serde = {version = "1.0.193",features = ["derive"]}
 quaternion-core = "0.5.0"
 clap = { version = "4.4.12", features = ["derive"] }
-crsf = "0.1.0"
 termion = "3.0.0"
+crsf = "1.0.1"
 
+[dev-dependencies]
+bitfield = "0.14"
+crc = "3.0"
+rand = "0.8.4"
 
 
 [features]
