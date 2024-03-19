@@ -4,13 +4,13 @@ use std::{
     sync::Arc,
 };
 
-use gz::msgs::quaternion;
+
 use rpos::{
     channel::{Receiver, Sender},
     pthread_scheduler::SchedulePthread, msg::{get_new_rx_of_message, get_new_tx_of_message},
 };
 
-use quaternion_core::{Quaternion as Q, QuaternionOps, normalize};
+use quaternion_core::{Quaternion as Q, normalize};
 
 use crate::{
     msg_define::{AccMsg, AttitudeMsg, GyroMsg},

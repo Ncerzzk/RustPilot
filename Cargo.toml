@@ -15,6 +15,7 @@ quaternion-core = "0.5.0"
 clap = { version = "4.4.12", features = ["derive"] }
 termion = "3.0.0"
 crsf = "1.0.1"
+serialport = "4.3.0"
 
 [dev-dependencies]
 bitfield = "0.14"
@@ -23,7 +24,7 @@ rand = "0.8.4"
 
 
 [features]
-default = ["gzsim"]
+default = []
 gzsim = ["rpos/lock_step_enabled","gz","gz-msgs-common"]
 
 [build-dependencies]

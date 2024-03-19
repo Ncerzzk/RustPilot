@@ -1,4 +1,5 @@
 #![feature(lazy_cell)]
+#![feature(trait_upcasting)]
 
 mod msg_define;
 mod pid;

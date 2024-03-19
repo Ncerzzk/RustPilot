@@ -20,14 +20,14 @@ jobs:
     - name: Cache APT Packages
       uses: awalsh128/cache-apt-pkgs-action@v1.4.1
       with:
-        packages: libgz-sim8-dev
+        packages: libgz-sim8-dev libudev-dev
         version: 1.0
     - uses: actions/checkout@v3
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
       with:
             toolchain: nightly
-            override: true
+            default: true
             components: rustfmt, clippy
     - name: submodule
       run: git submodule update --init

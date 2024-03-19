@@ -1,7 +1,7 @@
 use std::{fs::OpenOptions, io::Read};
 
 use clap::{ArgMatches, Args, Command};
-use rpos::{channel::Sender, msg::get_new_tx_of_message, thread_logln};
+use rpos::{channel::Sender, msg::get_new_tx_of_message, thread_logln, pthread_scheduler::SchedulePthread};
 
 use crate::msg_define::RcInputMsg;
 
@@ -20,11 +20,10 @@ struct Elrs {
 }
 
 impl Elrs {
-    fn new(dev_name: &String) -> Self {
-        let file = OpenOptions::new().read(true).open(dev_name).unwrap();
+    fn new(dev:Box<dyn Read>) -> Self {
         Elrs {
             tx: get_new_tx_of_message("rc_input").unwrap(),
-            dev: Box::new(file),
+            dev,
             parser: crsf::CrsfPacketParser::default(),
         }
     }
@@ -68,6 +67,21 @@ pub fn client_process_args(
 pub fn elrs_main(argc: u32, argv: *const &str) {
     if let Some(args) = client_process_args(argc, argv, "elrs") {
         let dev_name = args.get_one::<String>("dev_name").unwrap();
+        let dev:Box<dyn Read>;
+        if dev_name.contains("/dev/"){
+            let serial = serialport::new(dev_name, args.get_one::<u32>("baudrate").unwrap().to_owned());
+        dev = serial.open().unwrap();
+        }else{
+            let file = OpenOptions::new().read(true).open(dev_name).unwrap();
+            dev = Box::new(file);
+        }
+        let mut elrs = Elrs::new(dev);
+        SchedulePthread::new_simple(Box::new(move |s|{
+            loop{
+                elrs.process();
+                s.schedule_until(2000);
+            }
+        }));
         thread_logln!("dev:{}", dev_name);
     }
 }
@@ -188,7 +202,9 @@ mod tests {
         }
         drop(file);
 
-        let mut elrs = Elrs::new(&"elrs_test".to_string());
+        let file = OpenOptions::new().read(true).open("elrs_test").unwrap();
+        let dev = Box::new(file);
+        let mut elrs = Elrs::new(dev);
         let mut rx = get_new_rx_of_message::<RcInputMsg>("rc_input").unwrap();
         elrs.process();
         let msg = rx.read();
