@@ -20,7 +20,7 @@ jobs:
     - name: Cache APT Packages
       uses: awalsh128/cache-apt-pkgs-action@v1.4.1
       with:
-        packages: libgz-sim8-dev libudev-dev
+        packages: libgz-sim8-dev
         version: 1.0
     - uses: actions/checkout@v3
     - name: Install latest nightly
@@ -32,6 +32,6 @@ jobs:
     - name: submodule
       run: git submodule update --init
     - name: Build
-      run: cargo build --verbose --features gzsim
+      run: cargo build --verbose --features gzsim --target x86_64-unknown-linux-gnu
     - name: Run tests
-      run: RUST_TEST_THREADS=1 cargo test --verbose
+      run: RUST_TEST_THREADS=1 cargo test --verbose --target x86_64-unknown-linux-gnu

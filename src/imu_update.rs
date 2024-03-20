@@ -16,6 +16,8 @@ use crate::{
     msg_define::{AccMsg, AttitudeMsg, GyroMsg},
 };
 
+use rpos::libc::c_long;
+
 struct IMUUpdate {
     gyro_rx: Receiver<GyroMsg>,
     acc_rx: Receiver<AccMsg>,
@@ -34,7 +36,7 @@ fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
 
     const IMU_UPDATE_T: f32 = 0.002;
     const IMU_UPDATE_HALF_T: f32 = IMU_UPDATE_T / 2.0;
-    const IMU_UPDATE_T_US: i64 = (IMU_UPDATE_T * 1000.0 * 1000.0) as i64;
+    const IMU_UPDATE_T_US: c_long = (IMU_UPDATE_T * 1000.0 * 1000.0) as c_long;
     const IMU_P: f32 = 2.0;
     const IMU_I: f32 = 0.01;
 

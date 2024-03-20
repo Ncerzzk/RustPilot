@@ -1,4 +1,4 @@
-name: BasicBuild
+name: armv7
 
 on:
   push:
@@ -11,12 +11,10 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    container: ghcr.io/cross-rs/armv7-unknown-linux-gnueabihf:edge
 
     steps:
-    - name: update apt
-      run: sudo apt-get update
     - uses: actions/checkout@v3
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
@@ -25,8 +23,9 @@ jobs:
             override: true
             components: rustfmt, clippy
     - name: submodule
-      run: git submodule update --init
+      run: git config --global --add safe.directory /__w/RustPilot/RustPilot && git submodule update --init
+    - uses: actions/checkout@v3
     - name: Build
-      run: cargo build --verbose --target x86_64-unknown-linux-gnu
+      run: rustup target add armv7-unknown-linux-gnueabihf && cargo build --verbose --target armv7-unknown-linux-gnueabihf
     - name: Run tests
-      run: RUST_TEST_THREADS=1 cargo test --verbose --target x86_64-unknown-linux-gnu
+      run: cargo test --verbose --target armv7-unknown-linux-gnueabihf
