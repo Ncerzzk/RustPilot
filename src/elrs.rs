@@ -1,4 +1,4 @@
-use std::{fs::OpenOptions, io::Read};
+use std::{fs::OpenOptions, io::Read, time::Duration};
 
 use clap::{ArgMatches, Args, Command};
 use rpos::{channel::Sender, msg::get_new_tx_of_message, thread_logln, pthread_scheduler::SchedulePthread};
@@ -70,7 +70,7 @@ pub fn elrs_main(argc: u32, argv: *const &str) {
         let dev:Box<dyn Read>;
         if dev_name.contains("/dev/"){
             let serial = serialport::new(dev_name, args.get_one::<u32>("baudrate").unwrap().to_owned());
-        dev = serial.open().unwrap();
+            dev = serial.timeout(Duration::from_millis(1000)).open().unwrap();
         }else{
             let file = OpenOptions::new().read(true).open(dev_name).unwrap();
             dev = Box::new(file);
