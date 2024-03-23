@@ -15,6 +15,7 @@ mod att_control;
 mod mixer;
 mod imu_update;
 mod elrs;
+mod fpga_spi_pwm;
 
 use std::ffi::CStr;
 use std::io::{Read, Write, BufReader, BufRead};
