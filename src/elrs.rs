@@ -1,11 +1,12 @@
 use std::{fs::OpenOptions, io::Read, time::Duration};
 
-use clap::{ArgMatches, Args, Command};
+use clap::{Args, Command, Parser};
 use rpos::{channel::Sender, msg::get_new_tx_of_message, thread_logln, pthread_scheduler::SchedulePthread};
 
 use crate::msg_define::RcInputMsg;
 
-#[derive(Args, Debug)]
+#[derive(Parser)]
+#[command(name="erls", about = None, long_about = None)]
 struct Cli {
     #[arg(short, long, default_value_t = 420000)]
     baudrate: u32,
@@ -30,7 +31,11 @@ impl Elrs {
 
     fn process(&mut self) {
         let mut buf = [0; 1024];
-        let len = self.dev.read(&mut buf).unwrap();
+        let ret = self.dev.read(&mut buf);
+        if ret.is_err(){
+            return ;
+        }
+        let len = ret.unwrap();
         self.parser.push_bytes(&buf[..len]);
 
         while let Some(packet) = self.parser.next_packet() {
@@ -46,30 +51,30 @@ impl Elrs {
     }
 }
 
-pub fn client_process_args(
+pub fn client_process_args<T:clap::Parser>(
     argc: u32,
-    argv: *const &str,
-    cmd_name: &'static str,
-) -> Option<ArgMatches> {
-    let cli = Command::new(cmd_name);
-    let mut cli = Cli::augment_args(cli).disable_help_flag(false);
+    argv: *const &str
+) -> Option<T> {
+
     let argv = unsafe { std::slice::from_raw_parts(argv, argc as usize) };
 
-    let matches = cli.clone().try_get_matches_from(argv);
+    let ret = T::try_parse_from(argv);
 
-    if matches.is_err() {
-        let help_str = cli.render_help();
+    if ret.is_err() {
+        let help_str = T::command().render_help();
         thread_logln!("{}", help_str);
+        return None
     }
-    matches.ok()
+    ret.ok()
 }
 
 pub fn elrs_main(argc: u32, argv: *const &str) {
-    if let Some(args) = client_process_args(argc, argv, "elrs") {
-        let dev_name = args.get_one::<String>("dev_name").unwrap();
+    let cmd = Cli::augment_args(Command::new("elrs"));
+    if let Some(args) = client_process_args::<Cli>(argc, argv) {
+        let dev_name = &args.dev_name;
         let dev:Box<dyn Read>;
         if dev_name.contains("/dev/"){
-            let serial = serialport::new(dev_name, args.get_one::<u32>("baudrate").unwrap().to_owned());
+            let serial = serialport::new(dev_name, args.baudrate);
             dev = serial.timeout(Duration::from_millis(1000)).open().unwrap();
         }else{
             let file = OpenOptions::new().read(true).open(dev_name).unwrap();
