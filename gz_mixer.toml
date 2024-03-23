@@ -1,6 +1,7 @@
 [[mixers]]
 bind_ctrl_group_id = 0
 output_channel_idx = 0
+mode = "Speed"
 
 [[mixers.list]]
 ctrl_group_id = 0
@@ -27,6 +28,7 @@ max = 100.0
 [[mixers]]
 bind_ctrl_group_id = 0
 output_channel_idx = 1
+mode = "Speed"
 
 [[mixers.list]]
 ctrl_group_id = 0
@@ -53,6 +55,7 @@ max = 100.0
 [[mixers]]
 bind_ctrl_group_id = 0
 output_channel_idx = 2
+mode = "Speed"
 
 [[mixers.list]]
 ctrl_group_id = 0
@@ -79,6 +82,7 @@ max = 100.0
 [[mixers]]
 bind_ctrl_group_id = 0
 output_channel_idx = 3
+mode = "Speed"
 
 [[mixers.list]]
 ctrl_group_id = 0

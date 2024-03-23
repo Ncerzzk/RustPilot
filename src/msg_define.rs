@@ -41,12 +41,6 @@ pub struct ControllerOutputGroupMsg{
     pub output:[f32;8],
 }
 
-// Mixer Output
-#[derive(Debug,Clone)]
-pub struct MixerOutputMsg{
-    pub output:Box<Vec<(u8,f32)>>,
-}
-
 // Manual Control Input
 #[derive(Debug,Clone)]
 pub struct ManualControlMsg{
@@ -74,7 +68,7 @@ fn register_msgs(){
     add_message::<AttitudeTargetEulerMsg>("att_target_euler");
     add_message::<ControllerOutputGroupMsg>("controller_output0");
     add_message::<ControllerOutputGroupMsg>("controller_output1");
-    add_message::<MixerOutputMsg>("mixer_output");
+
     add_message::<ManualControlMsg>("manual_control");
     add_message::<RcInputMsg>("rc_input");
 }

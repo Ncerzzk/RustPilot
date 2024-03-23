@@ -1,12 +1,18 @@
-use std::{io::Read, ops::Neg, path::Path, sync::OnceLock};
+use std::{io::Read, ops::Neg, path::Path, sync::OnceLock, default};
 
 use rpos::{
     channel::Sender,
     msg::{get_new_rx_of_message, get_new_tx_of_message},
 };
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, __private::de};
 
-use crate::msg_define::{ControllerOutputGroupMsg, MixerOutputMsg};
+use crate::msg_define::{ControllerOutputGroupMsg};
+
+// Mixer Output
+#[derive(Debug,Clone)]
+pub struct MixerOutputMsg{
+    pub output:Box<Vec<MixerOutData>>,
+}
 
 /*
     for implement now:
@@ -16,6 +22,10 @@ use crate::msg_define::{ControllerOutputGroupMsg, MixerOutputMsg};
 
     flow:
     controller -->   mixer --> actuator
+
+    the output of controller should be -1000 ~ 1000( should  multiply a coefficient)
+    [pitch_out, roll_out, thrust_out, direction(yaw)_out, undefined...]
+
 */
 #[derive(Serialize, Deserialize)]
 struct Mixer {
@@ -30,11 +40,15 @@ impl Mixer {
     #[inline(always)]
     fn update_ctrl_outputs(&mut self, ctrl_group_id: u8, msg: &ControllerOutputGroupMsg) {
         self.controller_outputs[ctrl_group_id as usize] = *msg;
-        let mut publish = Vec::<(u8, f32)>::new();
+        let mut publish = Vec::<MixerOutData>::new();
 
         for i in &self.mixers {
             if i.bind_ctrl_group_id == ctrl_group_id {
-                publish.push((i.output_channel_idx, i.calcuate(&self.controller_outputs)));
+                publish.push(MixerOutData{
+                    chn: i.output_channel_idx,
+                    mode: i.mode.clone(),
+                    data: i.calcuate(&self.controller_outputs),
+                });
             }
         }
         self.tx.send(MixerOutputMsg {
@@ -84,6 +98,7 @@ impl Mixer {
             ],
             bind_ctrl_group_id: 0,
             output_channel_idx: 0,
+            mode:OutputMode::Speed
         };
 
         let motor_1 = SumMixer {
@@ -101,6 +116,7 @@ impl Mixer {
             ],
             bind_ctrl_group_id: 0,
             output_channel_idx: 1,
+            mode:OutputMode::Speed
         };
 
         let motor_2 = SumMixer {
@@ -118,6 +134,7 @@ impl Mixer {
             ],
             bind_ctrl_group_id: 0,
             output_channel_idx: 2,
+            mode:OutputMode::Speed
         };
 
         let motor_3 = SumMixer {
@@ -135,6 +152,7 @@ impl Mixer {
             ],
             bind_ctrl_group_id: 0,
             output_channel_idx: 3,
+            mode:OutputMode::Speed
         };
 
         self.mixers.push(motor_0);
@@ -147,6 +165,7 @@ impl Mixer {
 enum ControllerOutputChannel {
     Pitch = 0x0,
     Roll,
+    Thrust,
     Yaw,
 }
 
@@ -210,6 +229,24 @@ struct SumMixer {
     list: Vec<MixerChannel>,
     bind_ctrl_group_id: u8,
     output_channel_idx: u8,
+    #[serde(default)]
+    mode:OutputMode
+}
+
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize,Clone)]
+pub enum OutputMode{
+    #[default]
+    Duty, // 0 ~ 1.0
+    PluseWidth, // 0 ~ 2000 us (actually we can get a larger value, but no significance)
+    DShot, // 0 ~ 1.0
+    Speed, // only used in simulation now
+}
+
+#[derive(Debug,Clone)]
+pub struct MixerOutData{
+    pub chn:u8,
+    pub mode:OutputMode,
+    pub data:f32
 }
 
 impl SumMixer {
@@ -265,7 +302,9 @@ pub unsafe fn init_mixer(argc: u32, argv: *const &str) {
 
 #[rpos::ctor::ctor]
 fn register() {
+    rpos::msg::add_message:: <MixerOutputMsg>("mixer_output");
     rpos::module::Module::register("mixer", |a, b| unsafe { init_mixer(a, b) });
+
 }
 
 #[cfg(test)]

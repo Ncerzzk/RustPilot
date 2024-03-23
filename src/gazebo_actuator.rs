@@ -4,7 +4,7 @@ use gz::msgs::actuators::Actuators;
 use gz::transport::Publisher;
 use rpos::{channel::Receiver, msg::get_new_rx_of_message};
 
-use crate::{mixer::Scaler, msg_define::MixerOutputMsg};
+use crate::{mixer::{Scaler, MixerOutputMsg}};
 
 struct GazeboActuator {
     gz_node: gz::transport::Node,
@@ -19,11 +19,11 @@ impl GazeboActuator {
         let mut temp_msg = msg.clone();
         // sort msg by output channel id
         temp_msg.output.sort_by(|a,b|{
-            a.0.cmp(&b.0)
+            a.chn.cmp(&b.chn)
         });
 
-        for (_, val) in &*temp_msg.output {
-            v.push(self.scaler.scale(val + 0.0) as f64);
+        for i in &*temp_msg.output {
+            v.push(self.scaler.scale(i.data + 0.0) as f64);
         }
         let _ = self.publisher.publish(&Actuators {
             velocity: v,
