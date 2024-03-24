@@ -41,9 +41,12 @@ impl Elrs {
         while let Some(packet) = self.parser.next_packet() {
             match packet {
                 crsf::Packet::RcChannelsPacked(channels) => {
+                    // crsf channel value range: 0 ~ 1984
+                    // output rcInput msg must be: -1000 ~ 1000
+                    // ignore some value near 1000 to simplify the program.
                     let mut v: [u16; 8] = [0; 8];
                     v.copy_from_slice(&channels[0..8]);
-                    self.tx.send(RcInputMsg { channel_vals: v })
+                    self.tx.send(RcInputMsg { channel_vals: v.map(|x| (x as i16 - 1000).clamp(-1000, 1000) ) })
                 }
                 _ => {}
             }
@@ -213,7 +216,7 @@ mod tests {
         let mut rx = get_new_rx_of_message::<RcInputMsg>("rc_input").unwrap();
         elrs.process();
         let msg = rx.read();
-        assert_eq!(msg.channel_vals[0], 1000 + (cnt - 1) * 100);
+        assert_eq!(msg.channel_vals[0], ((cnt - 1) * 100) as i16);
         println!("{:?}", msg.channel_vals);
     }
 }

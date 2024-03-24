@@ -52,7 +52,7 @@ pub struct ManualControlMsg{
 
 #[derive(Debug,Clone)]
 pub struct RcInputMsg{
-    pub channel_vals:[u16;8]
+    pub channel_vals:[i16;8]
 }
 
 impl ManualControlMsg{
