@@ -30,7 +30,7 @@ struct Cli {
     #[arg(short, long, default_value_t = 420000)]
     baudrate: u32,
 
-    #[arg(long, default_value_t = 240_000_000)]
+    #[arg(long, default_value_t = 60_000_000)]
     pll_freq: u32,
 
     #[arg(long, default_value_t = 4)]
@@ -77,7 +77,7 @@ trait Actator {
 
     // pulse_width : us
     fn set_pluse_width(&mut self, chn: u8, freq: f32, pulse_width: f32) -> Result<(), ()> {
-        self.set_duty(chn, freq * pulse_width / 1000_0000.0)
+        self.set_duty(chn, freq * pulse_width / 1000_000.0)
     }
 }
 
@@ -132,9 +132,6 @@ impl FPGASPIPWM {
         }
 
         fpga_spi_pwm.write_reg(regs::PWM_CHANNEL_MAP0, chn_map);
-
-        println!("chn num:{}", cli.channel_num);
-        println!("chn num:{}", fpga_spi_pwm.cli_args.channel_num);
 
         fpga_spi_pwm
     }

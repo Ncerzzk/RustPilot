@@ -4,7 +4,7 @@ use rpos::{
     channel::Sender,
     msg::{get_new_rx_of_message, get_new_tx_of_message},
 };
-use serde::{Deserialize, Serialize, __private::de};
+use serde::{Deserialize, Serialize};
 
 use crate::msg_define::{ControllerOutputGroupMsg};
 
@@ -160,6 +160,7 @@ impl Mixer {
         self.mixers.push(motor_2);
         self.mixers.push(motor_3);
     }
+
 }
 
 enum ControllerOutputChannel {
@@ -372,7 +373,7 @@ mod tests {
             MIXER
                 .get_mut()
                 .unwrap()
-                .read_mixers_info_from_file("gz_mixer.toml")
+                .read_mixers_info_from_file("mixers/gz_mixer.toml")
                 .unwrap();
             let new = format!("{:?}", MIXER.get().unwrap().mixers);
             assert_eq!(origin, new);
