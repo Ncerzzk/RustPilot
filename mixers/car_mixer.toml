@@ -19,7 +19,7 @@ max = 2000
 # motor
 bind_ctrl_group_id = 0
 output_channel_idx = 1
-mode = "PulseWidth"
+mode = "PluseWidth"
 
 [[mixers.list]]
 ctrl_group_id = 0

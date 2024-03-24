@@ -3,6 +3,6 @@
 
 ./rust_pilot gazebo_actuator
 
-./rust_pilot mixer /home/ncer/RustPilot/gz_mixer.toml
+./rust_pilot mixer gz_mixer.toml
 
 ./rust_pilot att_control
