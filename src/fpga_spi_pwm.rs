@@ -3,7 +3,7 @@ use std::{
     io::{Read, Write},
 };
 
-use clap::{ Args,Parser};
+use clap::{Args, Parser};
 use rpos::{msg::get_new_rx_of_message, pthread_scheduler::SchedulePthread, thread_logln};
 use spidev::{SpiModeFlags, Spidev, SpidevOptions, SpidevTransfer};
 
@@ -12,7 +12,7 @@ use crate::{
     mixer::{MixerOutputMsg, OutputMode},
 };
 
-#[derive(Args)]
+#[derive(Args, Clone)]
 struct SpideviceArgs {
     #[arg(short, long)]
     dev_name: String,
@@ -24,7 +24,7 @@ struct SpideviceArgs {
     spi_max_freq: u32,
 }
 
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 #[command(name = "fpga_spi_pwm")]
 struct Cli {
     #[arg(short, long, default_value_t = 420000)]
@@ -85,6 +85,7 @@ struct FPGASPIPWM {
     dev: Spidev,
     periods: Vec<u16>,
     freqs: Vec<f32>,
+    cli_args: Cli,
 }
 
 impl FPGASPIPWM {
@@ -93,6 +94,7 @@ impl FPGASPIPWM {
             dev,
             periods: Vec::new(),
             freqs: Vec::new(),
+            cli_args: cli.clone(),
         };
 
         let cal_period = |target_freq: u32| {
@@ -131,6 +133,9 @@ impl FPGASPIPWM {
 
         fpga_spi_pwm.write_reg(regs::PWM_CHANNEL_MAP0, chn_map);
 
+        println!("chn num:{}", cli.channel_num);
+        println!("chn num:{}", fpga_spi_pwm.cli_args.channel_num);
+
         fpga_spi_pwm
     }
 
@@ -146,6 +151,12 @@ impl FPGASPIPWM {
         self.dev.transfer(&mut trans).unwrap();
 
         (rx_buf[1] as u16) << 8 | rx_buf[2] as u16
+    }
+
+    fn stop_all(&mut self) {
+        for i in 0..self.cli_args.channel_num {
+            self.write_reg(regs::CCR0 + i, 0);
+        }
     }
 }
 
@@ -190,7 +201,22 @@ pub fn fpga_spi_pwm_init(argc: u32, argv: *const &str) {
     }
     let spidev = process_spi_args(&args.spi_args);
     let mut rx = get_new_rx_of_message::<MixerOutputMsg>("mixer_output").unwrap();
-    let mut fpga_spi_pwm = FPGASPIPWM::new(spidev, args);
+
+    let mut fpga_spi_pwm = Box::new(FPGASPIPWM::new(spidev, args));
+    // move the data to heap. (if the data place in stack, the addr may change when being moved)
+
+    let ptr = &*fpga_spi_pwm as *const FPGASPIPWM as rpos::libc::c_ulong;
+
+    // add a panic hook, so that we could stop the motors when panic.
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |a| {
+        let c = ptr as *mut FPGASPIPWM;
+        unsafe {
+            (*c).stop_all();
+        }
+        println!("shutdown!");
+        default_hook(a);
+    }));
 
     SchedulePthread::new_fifo(
         8192,
@@ -207,7 +233,6 @@ pub fn fpga_spi_pwm_init(argc: u32, argv: *const &str) {
                     };
                 }
             }
-
             s.schedule_until(2000);
         }),
     );
