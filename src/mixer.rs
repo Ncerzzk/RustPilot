@@ -303,6 +303,9 @@ pub unsafe fn init_mixer(argc: u32, argv: *const &str) {
 #[rpos::ctor::ctor]
 fn register() {
     rpos::msg::add_message:: <MixerOutputMsg>("mixer_output");
+    // send a empty message, to fill the "data" field of channel
+    // or it would panic if the rx try to read
+    get_new_tx_of_message("mixer_output").unwrap().send(MixerOutputMsg{ output: Box::new(Vec::new()) });
     rpos::module::Module::register("mixer", |a, b| unsafe { init_mixer(a, b) });
 
 }
