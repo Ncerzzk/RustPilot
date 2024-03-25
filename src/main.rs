@@ -33,24 +33,6 @@ use rpos::libc;
 use clap::Parser;
 use rpos::server_client::{server_init, Client};
 
-/* main for debug */
-// fn main(){
-//     let a = ["sim_gz","/home/ncer/RustPilot/sim/quadcopter.toml"];
-//     init_gazebo_sim(2, a.as_ptr());
-
-//     let a = ["gazebo_actuator"];
-//     init_gz_actuator(1,a.as_ptr());
-
-//     unsafe{init_mixer(0,null_mut());}
-//     init_att_control(0,null_mut());
-
-//     init_imu_update(0,null());
-
-//     unsafe {assert_eq!(libc::mlockall(1 | 2),0)};
-
-//     gz::transport::wait_for_shutdown();
-
-// }
 #[derive(Parser)]
 #[command(author, version, about, long_about = None, arg_required_else_help(true))]
 struct Cli{
@@ -69,9 +51,8 @@ struct Cli{
 fn main() {
     let cli = Cli::parse();
 
-    let args:Vec<String> = env::args().collect();
     const SOCKET_PATH: &str = "./rpsocket";
-
+    unsafe {assert_eq!(libc::mlockall(1 | 2),0)};
     if cli.server{
         let hello_txt = r"
         ____                    __     ____     _     __          __
