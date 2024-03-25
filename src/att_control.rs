@@ -84,7 +84,7 @@ fn att_control_main(ptr: *mut c_void) -> *mut c_void {
 }
 
 pub fn init_att_control(_argc: u32, _argv: *const &str) {
-    SchedulePthread::new(2048, 98, att_control_main, null_mut(), false, None); // TODO edit pthread_key
+    SchedulePthread::new(16384, 98, att_control_main, null_mut(), false, None); // TODO edit pthread_key
 }
 
 #[rpos::ctor::ctor]

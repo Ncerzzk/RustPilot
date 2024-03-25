@@ -95,7 +95,7 @@ fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
 }
 
 pub fn init_imu_update(_argc: u32, _argv: *const &str) {
-    SchedulePthread::new(4096, 97, imu_update_main, null_mut(), false, None); // TODO edit pthread_key
+    SchedulePthread::new(1024*1024, 97, imu_update_main, null_mut(), false, None); // TODO edit pthread_key
 }
 
 #[rpos::ctor::ctor]

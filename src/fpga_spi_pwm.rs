@@ -216,7 +216,7 @@ pub fn fpga_spi_pwm_init(argc: u32, argv: *const &str) {
     }));
 
     SchedulePthread::new_fifo(
-        8192,
+        1024*1024,
         96,
         Box::new(move |s| loop {
             if let Some(mixer_out) = rx.try_read() {
