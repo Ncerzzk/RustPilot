@@ -2,7 +2,7 @@
 
 sleep 1
 
-./rust_pilot -- elrs  /dev/ttyS2top
+./rust_pilot -- elrs  /dev/ttyS2
 # set spi mode tempolarily, as it's a FPGA module bug.
 # I have fix the bug in dshot mode, while pwm mode i have never test yet
 # so just set spi-mode to 0, in which the module could work
