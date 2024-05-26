@@ -18,6 +18,7 @@ mod elrs;
 mod fpga_spi_pwm;
 mod manual_ctrl;
 mod msg_echo;
+mod rotation;
 
 use std::ffi::CStr;
 use std::io::{Read, Write, BufReader, BufRead};

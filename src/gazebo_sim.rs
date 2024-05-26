@@ -1,4 +1,5 @@
 use crate::msg_define::*;
+use crate::rotation::Rotation;
 use core::slice;
 use gz::msgs::any::Any;
 use gz::{msgs::imu::IMU, msgs::pose_v::Pose_V, msgs::world_stats::WorldStatistics};
@@ -9,16 +10,14 @@ use rpos::hrt::Timespec;
 use rpos::lock_step::lock_step_update_time;
 use rpos::module::Module;
 use rpos::msg::get_new_tx_of_message;
-use std::cell::LazyCell;
-use std::f32::consts::PI;
 use std::{cell::RefCell, os::raw::c_void, sync::Arc, time::Duration};
 
 struct GazeboSim {
     gz_node: RefCell<gz::transport::Node>,
     pose_index: RefCell<i32>,
     gz_sub_info: GzSubInfo,
-    gyro_tx: Sender<GyroMsg>,
-    acc_tx: Sender<AccMsg>,
+    gyro_tx: Sender<Vector3Msg>,
+    acc_tx: Sender<Vector3Msg>,
     attitude_tx: Sender<AttitudeMsg>,
 }
 
@@ -41,16 +40,17 @@ impl GazeboSim {
         let gyro_data = s.angular_velocity;
         let acc_data = s.linear_acceleration;
         let attitude_data = s.orientation;
-        self.gyro_tx.send(GyroMsg {
+        let rotation = Rotation::Yaw270;
+        self.gyro_tx.send(rotation.rotate_v(Vector3Msg {
             x: gyro_data.x as f32,
             y: gyro_data.y as f32,
             z: gyro_data.z as f32,
-        });
-        self.acc_tx.send(AccMsg {
+        }));
+        self.acc_tx.send(rotation.rotate_v(Vector3Msg {
             x: acc_data.x as f32,
             y: acc_data.y as f32,
             z: acc_data.z as f32,
-        });
+        }));
         let imu_q: quaternion_core::Quaternion<f32> = (
             attitude_data.w as f32,
             [
@@ -60,10 +60,7 @@ impl GazeboSim {
             ],
         );
 
-        let rotate_q: LazyCell<quaternion_core::Quaternion<f32>> =
-            LazyCell::new(|| quaternion_core::from_axis_angle([0.0, 0.0, 1.0], -PI / 2.0));
-
-        let imu_q = quaternion_core::mul(imu_q,*rotate_q); // rotate to align axis of gazebo and ours
+        let imu_q = rotation.rotate_q(imu_q);
         /*
         imu_q is the rotate quaternion from gazebo axis to body axis 
         rotate_q is the rotate quaternion from gazebo axis to world axis(our defination): x -> -y_old ,  y -> x_old. 
