@@ -17,6 +17,7 @@ termion = "3.0.0"
 crsf = "1.0.1"
 serialport = {version = "4.3.0",default-features = false}
 spidev = "0.6.0"
+mavlink = "0.13.1"
 
 [dev-dependencies]
 bitfield = "0.14"

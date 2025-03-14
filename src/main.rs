@@ -1,5 +1,6 @@
 #![feature(lazy_cell)]
 #![feature(trait_upcasting)]
+#![feature(once_cell_get_mut)]
 
 mod msg_define;
 mod pid;
@@ -19,6 +20,7 @@ mod fpga_spi_pwm;
 mod manual_ctrl;
 mod msg_echo;
 mod rotation;
+mod mavlink_gs;
 
 use std::ffi::CStr;
 use std::io::{Read, Write, BufReader, BufRead};
