@@ -4,7 +4,8 @@ use gz::msgs::actuators::Actuators;
 use gz::transport::Publisher;
 use rpos::{channel::Receiver, msg::get_new_rx_of_message};
 
-use crate::{mixer::{Scaler, MixerOutputMsg}};
+use crate::msg_define::MixerOutputMsg;
+use crate::basic::scaler::Scaler;
 
 struct GazeboActuator {
     gz_node: gz::transport::Node,
@@ -16,14 +17,9 @@ impl GazeboActuator {
     #[inline(always)]
     fn mixer_output_callback(&mut self, msg: &MixerOutputMsg) {
         let mut v: Vec<f64> = Vec::new();
-        let mut temp_msg = msg.clone();
-        // sort msg by output channel id
-        temp_msg.output.sort_by(|a,b|{
-            a.chn.cmp(&b.chn)
-        });
 
-        for i in &*temp_msg.output {
-            v.push(self.scaler.scale(i.data + 0.0) as f64);
+        for i in msg.output {
+            v.push(self.scaler.scale(i + 0.0) as f64);
         }
         let _ = self.publisher.publish(&Actuators {
             velocity: v,
@@ -35,14 +31,12 @@ impl GazeboActuator {
 unsafe impl Sync for GazeboActuator {}
 unsafe impl Send for GazeboActuator {}
 
-static mut GAZEBO_ACTUATOR: OnceLock<GazeboActuator> = OnceLock::new();
-
 pub fn init_gz_actuator(argc: u32, argv: *const &str) {
     let mut node = gz::transport::Node::new().unwrap();
 
     let publisher: Publisher<Actuators> = node.advertise("/X3/gazebo/command/motor_speed").unwrap();
 
-    let gz_ac = GazeboActuator {
+    let gz_ac = Box::new(GazeboActuator {
         gz_node: node,
         publisher,
         scaler: Scaler {
@@ -52,13 +46,13 @@ pub fn init_gz_actuator(argc: u32, argv: *const &str) {
             min: 0.0,
             max: 1000.0,
         },
-    };
+    });
 
-    let _ = unsafe { GAZEBO_ACTUATOR.set(gz_ac) };
+    let gz_ac = Box::leak(gz_ac);
 
     let rx: Receiver<MixerOutputMsg> = get_new_rx_of_message("mixer_output").unwrap();
     rx.register_callback("gz_actuator", |s| {
-        GazeboActuator::mixer_output_callback(unsafe { GAZEBO_ACTUATOR.get_mut().unwrap() }, s)
+        GazeboActuator::mixer_output_callback(gz_ac, s)
     });
 
     std::thread::sleep(std::time::Duration::from_secs(1)); // wait sometime for gz node connection
