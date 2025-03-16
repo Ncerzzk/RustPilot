@@ -1,5 +1,3 @@
-use std::default;
-
 pub struct PIDController {
     kp: f32,
     ki: f32,

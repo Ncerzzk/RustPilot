@@ -7,12 +7,14 @@ use quaternion_core::RotationType::*;
 
 use crate::msg_define::Vector3Msg;
 
+#[allow(dead_code)]
 pub fn get_euler_degree(q:quaternion_core::Quaternion<f32>)->[f32;3]{
     quaternion_core::to_euler_angles(Intrinsic, XYZ, q).map(|x|{
         x/PI * 180.0
     })
 }
 
+#[allow(dead_code)]
 pub enum Rotation{
     Yaw90,
     Yaw180,
@@ -56,6 +58,7 @@ mod tests{
         assert!((q1.1[0] - q2.1[0]).abs() < 1e-12);
         assert!((q1.1[1] - q2.1[1]).abs() < 1e-12);
         assert!((q1.1[2] - q2.1[2]).abs() < 1e-12);
+
     }
     #[test]
     fn test_rotate(){
@@ -65,4 +68,5 @@ mod tests{
         let rq = r.rotate_q(q);
         check_q_eq(rq, quaternion_core::from_axis_angle([0.0,1.0,0.0], ANGLE));
     }
+
 }

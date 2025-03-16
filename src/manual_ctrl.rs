@@ -1,6 +1,5 @@
 use clap::Parser;
 use rpos::{
-    channel::Sender,
     msg::{get_new_rx_of_message, get_new_tx_of_message},
 };
 

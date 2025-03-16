@@ -1,14 +1,9 @@
-use std::{io::Read, ops::Neg, path::Path, sync::OnceLock, default};
-
 use rpos::{
-    channel::Sender,
-    msg::{get_new_rx_of_message, get_new_tx_of_message}, thread_logln,
+    thread_logln,
 };
-use serde::{Deserialize, Serialize};
-use clap::{Args, Command,Parser};
+use clap::Parser;
 use std::sync::Arc;
 
-use std::net::UdpSocket;
 use mavlink::error::MessageReadError;
 use crate::{
     elrs::client_process_args};
@@ -21,8 +16,6 @@ struct Cli {
 
 
 pub unsafe fn init_mavlink_gs(argc: u32, argv: *const &str) {
-    let cmd = Cli::augment_args(Command::new("mavlink_gs"));
-
     let args =  client_process_args::<Cli>(argc, argv).unwrap();
 
     let mavconn = mavlink::connect::<mavlink::common::MavMessage>(&("udpout:".to_string() + &args.addr)).unwrap();

@@ -1,7 +1,9 @@
+
 use core::panic;
 use std::{collections::HashMap, str::FromStr, sync::OnceLock};
 
 use clap::{Args, Command};
+use gz_msgs_common::protobuf::rt::Lazy;
 use rpos::thread_logln;
 
 
@@ -12,7 +14,7 @@ pub enum ParameterData {
 }
 
 impl ParameterData {
-    fn get_i32(&self) -> i32 {
+    fn as_i32(&self) -> i32 {
         if let Self::Int(x) = self {
             x.clone()
         } else {
@@ -20,7 +22,7 @@ impl ParameterData {
         }
     }
 
-    fn get_f32(&self) -> f32 {
+    fn as_f32(&self) -> f32 {
         if let Self::Float(x) = self {
             x.clone()
         } else {
@@ -58,11 +60,7 @@ impl Parameter {
     */
 
     pub fn get(&self) -> &ParameterData {
-        if self.data.is_none() {
-            &self.default
-        } else {
-            &self.data.as_ref().unwrap()
-        }
+        &self.data.as_ref().unwrap_or(&self.default)
     }
 
     pub fn reset(&mut self) {
@@ -106,59 +104,70 @@ impl ParameterList {
 
 static mut PARAMS: OnceLock<ParameterList> = OnceLock::new();
 
-pub fn params_list() -> &'static ParameterList {
-    unsafe { PARAMS.get().unwrap() }
+pub fn with_params<F>(f: F) 
+where
+    F: FnMut((&String,&Parameter)),
+{
+    unsafe{PARAMS.get().unwrap().data.iter().for_each(f)};
 }
 
-pub fn param_list_mut() -> &'static mut ParameterList {
-    unsafe { PARAMS.get_mut().unwrap() }
+pub fn get_param(name:&str)->Option<&mut Parameter>{
+    unsafe{
+        PARAMS.get_mut().unwrap().get(name)
+    }
+}
+
+pub fn add_param(name: &str, default: ParameterData) {
+    
+    // unsafe { 
+    //     PARAMS.get_mut_or_init(|| {
+    //         ParameterList::new()
+    //     }).add(name, default);
+    // }
 }
 
 fn param_main(argc: u32, argv: *const &str) {
-    let cli = Command::new("param");
-    let mut cli = Cli::augment_args(cli).disable_help_flag(true);
-    let argv = unsafe { std::slice::from_raw_parts(argv, argc as usize) };
+    // let cli = Command::new("param");
+    // let mut cli = Cli::augment_args(cli).disable_help_flag(true);
+    // let argv = unsafe { std::slice::from_raw_parts(argv, argc as usize) };
 
-    let matches = cli.clone().try_get_matches_from(argv);
+    // let matches = cli.clone().try_get_matches_from(argv);
 
-    if matches.is_err(){
-        let help_str = cli.render_help();
-        thread_logln!("{}",help_str);
-        return ;
-    }
+    // if matches.is_err(){
+    //     let help_str = cli.render_help();
+    //     thread_logln!("{}",help_str);
+    //     return ;
+    // }
 
-    let matches = matches.unwrap();
-    let get = matches.get_one::<String>("get");
+    // let matches = matches.unwrap();
+    // let get = matches.get_one::<String>("get");
 
-    if let Some(name) = get {
-        thread_logln!("param:{}  val:{:?}", name, params_list().get_val(name));
-    }
+    // if let Some(name) = get {
+    //     thread_logln!("param:{}  val:{:?}", name, params_list().get_val(name));
+    // }
 
-    if let Some(name) = matches.get_one::<String>("set") {
-        let value = matches.get_one::<String>("value");
-        let param = param_list_mut().get(name);
-        if param.is_some() {
-            match value {
-                Some(v) => {
-                    if let Ok(x) = i32::from_str(v) {
-                        param.unwrap().set(ParameterData::Int(x));
-                    } else if let Ok(x) = f32::from_str(v) {
-                        param.unwrap().set(ParameterData::Float(x));
-                    }
-                }
-                None => thread_logln!("You should provide a value to write into parameter!"),
-            }
-        } else {
-            thread_logln!("Could not find this parameter:{}!", name);
-        }
-    }
+    // if let Some(name) = matches.get_one::<String>("set") {
+    //     let value = matches.get_one::<String>("value");
+    //     let param = param_list_mut().get(name);
+    //     if param.is_some() {
+    //         match value {
+    //             Some(v) => {
+    //                 if let Ok(x) = i32::from_str(v) {
+    //                     param.unwrap().set(ParameterData::Int(x));
+    //                 } else if let Ok(x) = f32::from_str(v) {
+    //                     param.unwrap().set(ParameterData::Float(x));
+    //                 }
+    //             }
+    //             None => thread_logln!("You should provide a value to write into parameter!"),
+    //         }
+    //     } else {
+    //         thread_logln!("Could not find this parameter:{}!", name);
+    //     }
+    // }
 }
 
 #[rpos::ctor::ctor]
 fn register() {
-    unsafe {
-        let _ = PARAMS.set(ParameterList::new());
-    };
     rpos::module::Module::register("param", param_main);
 }
 
@@ -181,14 +190,14 @@ mod tests {
         params.add("gyro_set", ParameterData::Int(0));
 
         let val = params.get_val("gyro_set").unwrap();
-        assert_eq!(val.get_i32(), 0);
+        assert_eq!(val.as_i32(), 0);
         assert!(params.get_val("undefined").is_none());
 
         let x = params.get("gyro_set").unwrap();
         x.set(ParameterData::Int(50));
 
-        assert_eq!(x.data.as_ref().unwrap().get_i32(), 50);
-        assert_eq!(params.get_val("gyro_set").unwrap().get_i32(), 50);
+        assert_eq!(x.data.as_ref().unwrap().as_i32(), 50);
+        assert_eq!(params.get_val("gyro_set").unwrap().as_i32(), 50);
     }
 
     #[test]
@@ -201,13 +210,13 @@ mod tests {
             .unwrap()
             .set(ParameterData::Float((1.0)));
         let val = params.get_val("f32_test").unwrap();
-        assert!(val.get_f32() > 0.9999);
-        assert!(val.get_f32() < 1.0001);
+        assert!(val.as_f32() > 0.9999);
+        assert!(val.as_f32() < 1.0001);
 
         params.get("f32_test").unwrap().reset();
         let val = params.get_val("f32_test").unwrap();
-        assert!(val.get_f32() > 0.49999);
-        assert!(val.get_f32() < 0.50001);
+        assert!(val.as_f32() > 0.49999);
+        assert!(val.as_f32() < 0.50001);
     }
 
     #[test]
@@ -216,6 +225,6 @@ mod tests {
         list.add("test", ParameterData::Int(0));
 
         let val = unsafe { PARAMS.get().unwrap().get_val("test").unwrap() };
-        assert_eq!(val.get_i32(), 0);
+        assert_eq!(val.as_i32(), 0);
     }
 }

@@ -1,6 +1,6 @@
 
 use rpos::server_client::setup_client_stdin_out;
-use termion::{self, color, event::Key, input::TermRead, raw::IntoRawMode};
+use termion::{self, event::Key, input::TermRead, raw::IntoRawMode};
 
 struct Channel {
     name: String,

@@ -1,6 +1,6 @@
 use std::{fs::OpenOptions, io::Read, time::Duration};
 
-use clap::{Args, Command, Parser};
+use clap::Parser;
 use rpos::{channel::Sender, msg::get_new_tx_of_message, thread_logln, pthread_scheduler::SchedulePthread};
 
 use crate::msg_define::RcInputMsg;
@@ -72,7 +72,6 @@ pub fn client_process_args<T:clap::Parser>(
 }
 
 pub fn elrs_main(argc: u32, argv: *const &str) {
-    let cmd = Cli::augment_args(Command::new("elrs"));
     if let Some(args) = client_process_args::<Cli>(argc, argv) {
         let dev_name = &args.dev_name;
         let dev:Box<dyn Read>;
