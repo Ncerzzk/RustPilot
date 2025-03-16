@@ -1,10 +1,8 @@
-#![feature(lazy_cell)]
 #![feature(trait_upcasting)]
 #![feature(once_cell_get_mut)]
 
 mod msg_define;
-mod pid;
-mod param;
+//mod param;
 
 #[cfg(feature = "gzsim")]
 mod gazebo_sim;
@@ -19,18 +17,9 @@ mod elrs;
 //mod fpga_spi_pwm;
 mod manual_ctrl;
 mod msg_echo;
-mod rotation;
 mod mavlink_gs;
 mod basic;
 
-use std::ffi::CStr;
-use std::io::{Read, Write, BufReader, BufRead};
-use std::mem::MaybeUninit;
-use std::os::unix::net::{UnixStream, UnixListener};
-use std::env;
-use std::fs::remove_file;
-use std::ptr::{null_mut, null};
-use std::sync::LazyLock;
 use rpos::module::Module;
 use rpos::libc;
 

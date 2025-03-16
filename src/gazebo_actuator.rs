@@ -1,13 +1,11 @@
-use std::sync::OnceLock;
-
 use gz::msgs::actuators::Actuators;
 use gz::transport::Publisher;
 use rpos::{channel::Receiver, msg::get_new_rx_of_message};
-
-use crate::msg_define::MixerOutputMsg;
 use crate::basic::scaler::Scaler;
+use crate::msg_define::MixerOutputMsg;
 
 struct GazeboActuator {
+    #[allow(unused)]
     gz_node: gz::transport::Node,
     publisher: Publisher<Actuators>,
     scaler: Scaler,
@@ -16,6 +14,9 @@ struct GazeboActuator {
 impl GazeboActuator {
     #[inline(always)]
     fn mixer_output_callback(&mut self, msg: &MixerOutputMsg) {
+        if msg.control_group_id != 0 {
+            return ;
+        }
         let mut v: Vec<f64> = Vec::new();
 
         for i in msg.output {
@@ -31,7 +32,7 @@ impl GazeboActuator {
 unsafe impl Sync for GazeboActuator {}
 unsafe impl Send for GazeboActuator {}
 
-pub fn init_gz_actuator(argc: u32, argv: *const &str) {
+pub fn init_gz_actuator(_argc: u32, _argv: *const &str) {
     let mut node = gz::transport::Node::new().unwrap();
 
     let publisher: Publisher<Actuators> = node.advertise("/X3/gazebo/command/motor_speed").unwrap();

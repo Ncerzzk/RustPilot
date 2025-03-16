@@ -1,8 +1,8 @@
 use std::{ffi::c_void, ptr::null_mut, sync::Arc};
 
 use rpos::{
-    channel::{Receiver, Sender},
-    msg::{get_new_rx_of_message, get_new_tx_of_message},
+    channel::Receiver,
+    msg::{get_new_rx_of_message},
     pthread_scheduler::SchedulePthread,
 };
 
@@ -62,7 +62,7 @@ fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
         imu_update_kp: 2.0,
     };
 
-    let q_tx: Sender<AttitudeMsg> = get_new_tx_of_message("attitude").unwrap();
+    // let q_tx: Sender<AttitudeMsg> = get_new_tx_of_message("attitude").unwrap();
     let mut q_rx_debug: Receiver<AttitudeMsg> = get_new_rx_of_message("attitude").unwrap();
 
     const IMU_UPDATE_T: f32 = 0.002;
@@ -98,6 +98,7 @@ fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
         // });
         sp.schedule_until(IMU_UPDATE_T_US);
     }
+    #[allow(unreachable_code)]
     null_mut()
 }
 

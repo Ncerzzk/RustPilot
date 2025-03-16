@@ -3,7 +3,7 @@ use std::{os::raw::c_void, ptr::null_mut, sync::Arc};
 
 use crate::{
     msg_define::{AttitudeMsg, AttitudeTargetEulerMsg, ControllerOutputGroupMsg},
-    pid::PIDController,
+    basic::pid::PIDController,
 };
 
 use quaternion_core::{frame_rotation, point_rotation, Quaternion as Q};
@@ -80,6 +80,7 @@ fn att_control_main(ptr: *mut c_void) -> *mut c_void {
 
         sp.schedule_until(2500);
     }
+    #[allow(unreachable_code)]
     null_mut()
 }
 

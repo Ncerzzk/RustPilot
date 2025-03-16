@@ -1,4 +1,3 @@
-use quaternion_core::Quaternion;
 use rpos::msg::add_message;
 
 
@@ -29,12 +28,14 @@ pub struct AttitudeTargetEulerMsg{
 }
 
 // Controller Output
+#[allow(dead_code)]
 #[derive(Debug,Clone,Copy)]
 pub struct ControllerOutputGroupMsg{
     pub output:[f32;8],
 }
 
 // Manual Control Input
+#[allow(dead_code)]
 #[derive(Debug,Clone)]
 pub struct ManualControlMsg{
     pub pitch:u32,
@@ -48,8 +49,15 @@ pub struct RcInputMsg{
     pub channel_vals:[i16;8]
 }
 
+#[allow(dead_code)]
 impl ManualControlMsg{
     pub const MAX:u32 = 10000;
+}
+
+#[derive(Debug,Clone)]
+pub struct MixerOutputMsg{
+    pub control_group_id:u8,
+    pub output:[f32;8],
 }
 
 

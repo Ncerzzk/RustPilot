@@ -1,19 +1,18 @@
 use crate::msg_define::*;
-use crate::rotation::Rotation;
+use crate::basic::rotation::Rotation;
 use core::slice;
-use gz::msgs::any::Any;
-use gz::{msgs::imu::IMU, msgs::pose_v::Pose_V, msgs::world_stats::WorldStatistics};
-use quaternion_core::{to_euler_angles, Quaternion, RotationSequence, RotationType::Intrinsic};
+use gz::msgs::imu::IMU;
 use rpos::channel::Sender;
 use rpos::ctor::ctor;
 use rpos::hrt::Timespec;
 use rpos::lock_step::lock_step_update_time;
 use rpos::module::Module;
 use rpos::msg::get_new_tx_of_message;
-use std::{cell::RefCell, os::raw::c_void, sync::Arc, time::Duration};
+use std::{cell::RefCell, sync::Arc, time::Duration};
 
 struct GazeboSim {
     gz_node: RefCell<gz::transport::Node>,
+    #[allow(unused)]
     pose_index: RefCell<i32>,
     gz_sub_info: GzSubInfo,
     gyro_tx: Sender<Vector3Msg>,
@@ -24,6 +23,8 @@ struct GazeboSim {
 #[derive(serde::Deserialize)]
 struct GzSubInfo {
     world_name: String,
+
+    #[allow(unused)]
     pose_obj_name: String,
 }
 
@@ -78,7 +79,7 @@ impl GazeboSim {
         let sub_info: GzSubInfo =
             toml::from_str(&std::fs::read_to_string(toml_filename).unwrap()).unwrap();
 
-        let sim = Arc::new_cyclic(|weak| {
+        let sim = Arc::new_cyclic(|_| {
             let a = GazeboSim {
                 gz_node: RefCell::new(gz::transport::Node::new().unwrap()),
                 pose_index: RefCell::new(-1),
@@ -106,6 +107,7 @@ impl GazeboSim {
         })
     }
 
+    #[allow(dead_code)]
     fn run_steps(self: &Arc<Self>, steps: u64) {
         let mut req = gz::msgs::world_control::WorldControl::new();
         req.pause = false;
@@ -125,7 +127,7 @@ impl GazeboSim {
 pub fn init_gazebo_sim(_argc: u32, _argv: *const &str) {
     assert!(_argc == 2);
     let argv = unsafe { slice::from_raw_parts(_argv, _argc as usize) };
-    let sim = GazeboSim::new(argv[1]);
+    let _ = GazeboSim::new(argv[1]);
     println!("gz inited!");
 }
 
