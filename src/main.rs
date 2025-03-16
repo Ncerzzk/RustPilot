@@ -13,14 +13,15 @@ mod gazebo_actuator;
 
 mod fake_linux_input;
 mod att_control;
-mod mixer;
+//mod mixer;
 mod imu_update;
 mod elrs;
-mod fpga_spi_pwm;
+//mod fpga_spi_pwm;
 mod manual_ctrl;
 mod msg_echo;
 mod rotation;
 mod mavlink_gs;
+mod basic;
 
 use std::ffi::CStr;
 use std::io::{Read, Write, BufReader, BufRead};
