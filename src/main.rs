@@ -2,7 +2,7 @@
 #![feature(once_cell_get_mut)]
 
 mod msg_define;
-//mod param;
+mod param;
 
 #[cfg(feature = "gzsim")]
 mod gazebo_sim;
