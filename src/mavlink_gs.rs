@@ -3,7 +3,6 @@ use rpos::thread_logln;
 use std::sync::Arc;
 
 use crate::{
-    elrs::client_process_args,
     param::{self, ParameterData},
 };
 use mavlink::{
@@ -49,7 +48,7 @@ fn get_paramdata_in_mav(p: &common::MavParamType, value: f32) -> Option<param::P
 }
 
 pub unsafe fn init_mavlink_gs(argc: u32, argv: *const &str) {
-    let args = client_process_args::<Cli>(argc, argv).unwrap();
+    let args = crate::basic::client_process_args::<Cli>(argc, argv).unwrap();
 
     let mavconn = mavlink::connect::<MavMessage>(&("udpout:".to_string() + &args.addr)).unwrap();
 

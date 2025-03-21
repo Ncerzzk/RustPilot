@@ -1,0 +1,40 @@
+{
+  "mixers": [
+    {
+      "bind_ctrl_group_id": 0,
+      "mode": "PluseWidth",
+      "output_channel_idx": 0,
+      "list": [
+        {
+          "ctrl_channel": "Yaw",
+          "ctrl_group_id": 0,
+          "scaler": {
+            "max": 2000,
+            "min": 1000,
+            "offset": 1500,
+            "scale_n": 0.5,
+            "scale_p": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "bind_ctrl_group_id": 0,
+      "mode": "PluseWidth",
+      "output_channel_idx": 1,
+      "list": [
+        {
+          "ctrl_channel": "Roll",
+          "ctrl_group_id": 0,
+          "scaler": {
+            "max": 2000,
+            "min": 1000,
+            "offset": 1500,
+            "scale_n": 0.5,
+            "scale_p": 0.5
+          }
+        }
+      ]
+    }
+  ]
+}

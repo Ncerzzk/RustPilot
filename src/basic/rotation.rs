@@ -5,7 +5,7 @@ use std::f32::consts::PI;
 use quaternion_core::RotationSequence::*;
 use quaternion_core::RotationType::*;
 
-use crate::msg_define::Vector3Msg;
+use crate::msg_define::Vector3;
 
 #[allow(dead_code)]
 pub fn get_euler_degree(q:quaternion_core::Quaternion<f32>)->[f32;3]{
@@ -38,9 +38,9 @@ impl Rotation{
     }
 
     #[inline]
-    pub fn rotate_v(&self,q:Vector3Msg)->Vector3Msg{
+    pub fn rotate_v(&self,q:Vector3)->Vector3{
         let ret = self.rotate([q.x,q.y,q.z]);
-        Vector3Msg{
+        Vector3{
             x:ret[0],
             y:ret[1],
             z:ret[2]

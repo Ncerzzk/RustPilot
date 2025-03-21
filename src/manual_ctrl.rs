@@ -4,8 +4,7 @@ use rpos::{
 };
 
 use crate::{
-    elrs::client_process_args,
-    msg_define::{ControllerOutputGroupMsg, RcInputMsg},
+    msg_define::RcInputMsg,
 };
 
 #[derive(Parser, Clone)]
@@ -16,7 +15,7 @@ struct ManualCtrl {
 }
 
 pub fn init_manual_ctrl(argc: u32, argv: *const &str) {
-    if let Some(args) = client_process_args::<ManualCtrl>(argc, argv) {
+    if let Some(args) = crate::basic::client_process_args::<ManualCtrl>(argc, argv) {
         let rx = get_new_rx_of_message::<RcInputMsg>("rc_input").unwrap();
 
         let ctrl_msg_tx =

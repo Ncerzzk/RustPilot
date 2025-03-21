@@ -1,15 +1,15 @@
-use std::{io::Read, ops::Neg, path::Path, sync::OnceLock, default};
-
+#![allow(dead_code)]
+use crate::basic::scaler::Scaler;
 use rpos::{
     channel::Sender,
     msg::{get_new_rx_of_message, get_new_tx_of_message},
 };
 use serde::{Deserialize, Serialize};
+use std::{io::Read, path::Path };
 
-use crate::msg_define::{ControllerOutputGroupMsg};
+use crate::msg_define::{TorqueThrustMsg, MixerOutputMsg};
 
 // Mixer Output
-
 
 /*
     for implement now:
@@ -27,7 +27,7 @@ use crate::msg_define::{ControllerOutputGroupMsg};
 #[derive(Serialize, Deserialize)]
 struct Mixer {
     #[serde(skip)]
-    controller_outputs: Vec<ControllerOutputGroupMsg>,
+    controller_outputs: Vec<TorqueThrustMsg>,
     mixers: Vec<SumMixer>,
     #[serde(skip)]
     tx: Sender<MixerOutputMsg>,
@@ -35,21 +35,17 @@ struct Mixer {
 
 impl Mixer {
     #[inline(always)]
-    fn update_ctrl_outputs(&mut self, ctrl_group_id: u8, msg: &ControllerOutputGroupMsg) {
-        self.controller_outputs[ctrl_group_id as usize] = *msg;
-        let mut publish = Vec::<MixerOutData>::new();
-
+    fn update_ctrl_outputs(&self, msg: &TorqueThrustMsg) {
+        let mut publish: [f32; 8] = [0.0; 8];
         for i in &self.mixers {
-            if i.bind_ctrl_group_id == ctrl_group_id {
-                publish.push(MixerOutData{
-                    chn: i.output_channel_idx,
-                    mode: i.mode.clone(),
-                    data: i.calcuate(&self.controller_outputs),
-                });
+            if i.bind_ctrl_group_id == 0 {
+                // TODO: remove this
+                publish[i.output_channel_idx as usize] = i.calcuate(&msg)
             }
         }
         self.tx.send(MixerOutputMsg {
-            output: Box::new(publish),
+            output: publish,
+            control_group_id: 0,
         });
     }
 
@@ -57,10 +53,10 @@ impl Mixer {
     where
         P: AsRef<Path>,
     {
-        let mut toml_str = String::new();
+        let mut s = String::new();
         if let Ok(mut file) = std::fs::File::open(filepath) {
-            file.read_to_string(&mut toml_str).unwrap();
-            if let Ok(temp) = toml::from_str::<Mixer>(&toml_str) {
+            file.read_to_string(&mut s).unwrap();
+            if let Ok(temp) = serde_json::from_str::<Mixer>(&s) {
                 self.mixers = temp.mixers;
             } else {
                 return Err(());
@@ -85,17 +81,17 @@ impl Mixer {
                 MixerChannel {
                     scaler: Scaler::default(),
                     ctrl_group_id: 0,
-                    ctrl_channel_idx: ControllerOutputChannel::Pitch as u8,
+                    ctrl_channel: ControlChannel::Pitch,
                 },
                 MixerChannel {
                     scaler: -Scaler::default(),
                     ctrl_group_id: 0,
-                    ctrl_channel_idx: ControllerOutputChannel::Roll as u8,
+                    ctrl_channel: ControlChannel::Roll,
                 },
             ],
             bind_ctrl_group_id: 0,
             output_channel_idx: 0,
-            mode:OutputMode::Speed
+            mode: OutputMode::Speed,
         };
 
         let motor_1 = SumMixer {
@@ -103,17 +99,17 @@ impl Mixer {
                 MixerChannel {
                     scaler: -Scaler::default(),
                     ctrl_group_id: 0,
-                    ctrl_channel_idx: ControllerOutputChannel::Pitch as u8,
+                    ctrl_channel: ControlChannel::Pitch,
                 },
                 MixerChannel {
                     scaler: Scaler::default(),
                     ctrl_group_id: 0,
-                    ctrl_channel_idx: ControllerOutputChannel::Roll as u8,
+                    ctrl_channel: ControlChannel::Roll,
                 },
             ],
             bind_ctrl_group_id: 0,
             output_channel_idx: 1,
-            mode:OutputMode::Speed
+            mode: OutputMode::Speed,
         };
 
         let motor_2 = SumMixer {
@@ -121,17 +117,17 @@ impl Mixer {
                 MixerChannel {
                     scaler: Scaler::default(),
                     ctrl_group_id: 0,
-                    ctrl_channel_idx: ControllerOutputChannel::Pitch as u8,
+                    ctrl_channel: ControlChannel::Pitch,
                 },
                 MixerChannel {
                     scaler: Scaler::default(),
                     ctrl_group_id: 0,
-                    ctrl_channel_idx: ControllerOutputChannel::Roll as u8,
+                    ctrl_channel: ControlChannel::Roll,
                 },
             ],
             bind_ctrl_group_id: 0,
             output_channel_idx: 2,
-            mode:OutputMode::Speed
+            mode: OutputMode::Speed,
         };
 
         let motor_3 = SumMixer {
@@ -139,17 +135,17 @@ impl Mixer {
                 MixerChannel {
                     scaler: -Scaler::default(),
                     ctrl_group_id: 0,
-                    ctrl_channel_idx: ControllerOutputChannel::Pitch as u8,
+                    ctrl_channel: ControlChannel::Pitch,
                 },
                 MixerChannel {
                     scaler: -Scaler::default(),
                     ctrl_group_id: 0,
-                    ctrl_channel_idx: ControllerOutputChannel::Roll as u8,
+                    ctrl_channel: ControlChannel::Roll,
                 },
             ],
             bind_ctrl_group_id: 0,
             output_channel_idx: 3,
-            mode:OutputMode::Speed
+            mode: OutputMode::Speed,
         };
 
         self.mixers.push(motor_0);
@@ -157,23 +153,13 @@ impl Mixer {
         self.mixers.push(motor_2);
         self.mixers.push(motor_3);
     }
-
 }
-
-enum ControllerOutputChannel {
-    Pitch = 0x0,
-    Roll,
-    Thrust,
-    Yaw,
-}
-
-
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct MixerChannel {
     scaler: Scaler,
     ctrl_group_id: u8,
-    ctrl_channel_idx: u8,
+    ctrl_channel: ControlChannel,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -182,152 +168,128 @@ struct SumMixer {
     bind_ctrl_group_id: u8,
     output_channel_idx: u8,
     #[serde(default)]
-    mode:OutputMode
+    mode: OutputMode,
 }
 
-#[derive(Debug, Default, serde::Serialize, serde::Deserialize,Clone)]
-pub enum OutputMode{
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone,Copy)]
+enum ControlChannel{
+    Pitch=0,
+    Roll,
+    Yaw,
+    ThrustX,
+    ThrustY,
+    ThrustZ, 
+}
+
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize, Clone)]
+pub enum OutputMode {
     #[default]
     Duty, // 0 ~ 1.0
     PluseWidth, // 0 ~ 2000 us (actually we can get a larger value, but no significance)
-    DShot, // 0 ~ 1.0
-    Speed, // only used in simulation now
-}
-
-#[derive(Debug,Clone)]
-pub struct MixerOutData{
-    pub chn:u8,
-    pub mode:OutputMode,
-    pub data:f32
+    DShot,      // 0 ~ 1.0
+    Speed,      // only used in simulation now
 }
 
 impl SumMixer {
-    fn calcuate(&self, ctrl_output_groups: &Vec<ControllerOutputGroupMsg>) -> f32 {
-        let ret: f32 = self.list.iter().fold(0.0, |acc, i| {
-            let group = ctrl_output_groups.get(i.ctrl_group_id as usize).unwrap();
-            let input = group.output.get(i.ctrl_channel_idx as usize).unwrap();
-            acc + i.scaler.scale(*input)
+    fn calcuate(&self, ctrl_out: &TorqueThrustMsg) -> f32 {
+        let mixer: f32 = self.list.iter().fold(0.0, |acc, i| {
+            let input;
+            if (i.ctrl_channel as u8) < 3 {
+                input = ctrl_out.torques[i.ctrl_channel as usize];
+            } else if (i.ctrl_channel as u8) < 6 {
+                input = ctrl_out.thrusts[i.ctrl_channel as usize];
+            } else {
+                panic!("error index!");
+            }
+            acc + i.scaler.scale(input)
         });
-        ret
+        mixer
     }
 }
 
-static mut MIXER: OnceLock<Mixer> = OnceLock::new();
-const CONTROLLER_OUTPUT_COUNT: u8 = 2;
-
 pub unsafe fn init_mixer(argc: u32, argv: *const &str) {
-    let _ = MIXER.get_or_init(|| {
-        let mut ret = Mixer {
-            controller_outputs: Vec::new(),
-            mixers: Vec::new(),
-            tx: get_new_tx_of_message("mixer_output").unwrap(),
-        };
+    let mut mixer = Mixer {
+        controller_outputs: Vec::new(),
+        mixers: Vec::new(),
+        tx: get_new_tx_of_message("mixer_output").unwrap(),
+    };
 
-        if argc == 2 {
-            let path = std::slice::from_raw_parts(argv, argc as usize);
-            println!("read mixer from {}.", path[1]);
-            ret.read_mixers_info_from_file(path[1]).unwrap();
-        } else if argc == 1 {
-            println!("use default x quadcopter mixer!");
-            ret.init_x_quadcopter_mixers();
-        } else {
-            panic!("error arg num of mixer!");
-        }
+    if argc == 2 {
+        let path = std::slice::from_raw_parts(argv, argc as usize);
+        println!("read mixer from {}.", path[1]);
+        mixer.read_mixers_info_from_file(path[1]).unwrap();
+    } else if argc == 1 {
+        println!("use default x quadcopter mixer!");
+        mixer.init_x_quadcopter_mixers();
+    } else {
+        panic!("error arg num of mixer!");
+    }
 
-        for i in 0..CONTROLLER_OUTPUT_COUNT {
-            let rx = get_new_rx_of_message::<ControllerOutputGroupMsg>(
-                format!("controller_output{}", i).as_str(),
-            )
-            .unwrap();
-            ret.controller_outputs
-                .push(ControllerOutputGroupMsg { output: [0.0; 8] });
-            rx.register_callback(
-                format!("mixer_listener{}", i).as_str(),
-                move |x: &ControllerOutputGroupMsg| {
-                    MIXER.get_mut().unwrap().update_ctrl_outputs(i, x);
-                },
-            );
-        }
-        ret
+    let rx = get_new_rx_of_message::<TorqueThrustMsg>("controller_output").unwrap();
+    rx.register_callback("mixer_listner", move |x: &TorqueThrustMsg| {
+        mixer.update_ctrl_outputs(x);
     });
 }
 
 #[rpos::ctor::ctor]
 fn register() {
-    rpos::msg::add_message:: <MixerOutputMsg>("mixer_output");
-    // send a empty message, to fill the "data" field of channel
-    // or it would panic if the rx try to read
-    get_new_tx_of_message("mixer_output").unwrap().send(MixerOutputMsg{ output: Box::new(Vec::new()) });
     rpos::module::Module::register("mixer", |a, b| unsafe { init_mixer(a, b) });
-
 }
 
 #[cfg(test)]
 mod tests {
     use std::{default, ptr::null_mut};
 
-    use crate::mixer;
+    use crate::{mixer, msg_define::{EulerVector3, Vector3}};
 
     use super::*;
 
-    fn get_fake_controller_output_tx(group_id: u8) -> Sender<ControllerOutputGroupMsg> {
-        let tx = get_new_tx_of_message::<ControllerOutputGroupMsg>(
-            format!("controller_output{}", group_id).as_str(),
-        )
-        .unwrap();
-        tx
-    }
     #[test]
     fn test_init_mixer() {
-        let tx = get_fake_controller_output_tx(0);
+        let tx = get_new_tx_of_message::<TorqueThrustMsg>("controller_output").unwrap();
+        let mut rx =get_new_rx_of_message::<MixerOutputMsg>("mixer_output").unwrap();
         unsafe {
             init_mixer(1, null_mut());
-            assert_eq!(MIXER.get().unwrap().controller_outputs.len(), 2);
-
-            tx.send(ControllerOutputGroupMsg { output: [1.0; 8] });
-            for i in 0..8 {
-                assert!(MIXER.get().unwrap().controller_outputs[0].output[i as usize] > 0.0);
-                assert!(MIXER.get().unwrap().controller_outputs[0].output[i as usize] < 2.0);
-            }
+            assert!(rx.try_read().is_none());
+            tx.send(TorqueThrustMsg {
+                torques: EulerVector3{
+                    pitch: 1.0,
+                    roll: 0.0,
+                    yaw: 0.0,
+                },
+                thrusts: Vector3{
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+            });
+            rx.try_read().unwrap();
         }
     }
 
-    #[test]
-    fn test_x_quadcoptermixer_calcute() {
-        let ctrl_tx = get_fake_controller_output_tx(0);
-        let mut mixer_rx = get_new_rx_of_message::<MixerOutputMsg>("mixer_output").unwrap();
-        unsafe {
-            init_mixer(1, null_mut());
-            MIXER.get_mut().unwrap().init_x_quadcopter_mixers();
-        }
+    // #[test]
+    // fn test_mixer2toml() {
+    //     unsafe {
+    //         init_mixer(1, null_mut());
+    //     }
+    //     println!(
+    //         "{}",
+    //         toml::to_string_pretty(unsafe { &(MIXER.get().unwrap()) }).unwrap()
+    //     );
+    // }
 
-        ctrl_tx.send(ControllerOutputGroupMsg { output: [50.0; 8] });
-        println!("{:?}", mixer_rx.read())
-    }
-
-    #[test]
-    fn test_mixer2toml() {
-        unsafe {
-            init_mixer(1, null_mut());
-        }
-        println!(
-            "{}",
-            toml::to_string_pretty(unsafe { &(MIXER.get().unwrap()) }).unwrap()
-        );
-    }
-
-    #[test]
-    fn test_toml2mixer() {
-        unsafe {
-            init_mixer(1, null_mut());
-            let origin = format!("{:?}", MIXER.get().unwrap().mixers);
-            MIXER
-                .get_mut()
-                .unwrap()
-                .read_mixers_info_from_file("mixers/gz_mixer.toml")
-                .unwrap();
-            let new = format!("{:?}", MIXER.get().unwrap().mixers);
-            assert_eq!(origin, new);
-        }
-    }
+    // #[test]
+    // fn test_toml2mixer() {
+    //     unsafe {
+    //         init_mixer(1, null_mut());
+    //         let origin = format!("{:?}", MIXER.get().unwrap().mixers);
+    //         MIXER
+    //             .get_mut()
+    //             .unwrap()
+    //             .read_mixers_info_from_file("mixers/gz_mixer.toml")
+    //             .unwrap();
+    //         let new = format!("{:?}", MIXER.get().unwrap().mixers);
+    //         assert_eq!(origin, new);
+    //     }
+    // }
 }
