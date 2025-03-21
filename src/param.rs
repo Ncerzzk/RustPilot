@@ -1,20 +1,26 @@
-
 use core::panic;
-use std::{collections::HashMap, str::FromStr, sync::OnceLock};
+use std::sync::LazyLock;
 
-use clap::{Args, Command};
-use gz_msgs_common::protobuf::rt::Lazy;
-use rpos::thread_logln;
+use clap::Args;
+use dashmap::DashMap;
 
-
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum ParameterData {
+    Bool(bool),
     Int(i32),
     Float(f32),
 }
 
 impl ParameterData {
-    fn as_i32(&self) -> i32 {
+    pub fn union_to_f32(&self) -> f32 {
+        match self {
+            ParameterData::Bool(x) => unsafe { std::mem::transmute(*x as u32) },
+            ParameterData::Int(x) => unsafe { std::mem::transmute(*x) },
+            ParameterData::Float(x) => *x,
+        }
+    }
+
+    pub fn as_i32(&self) -> i32 {
         if let Self::Int(x) = self {
             x.clone()
         } else {
@@ -22,19 +28,37 @@ impl ParameterData {
         }
     }
 
-    fn as_f32(&self) -> f32 {
+    pub fn as_f32(&self) -> f32 {
         if let Self::Float(x) = self {
             x.clone()
         } else {
             panic!("this param is not f32!")
         }
     }
+
+    pub fn as_bool(&self) -> bool {
+        if let Self::Bool(x) = self {
+            x.clone()
+        } else {
+            panic!("this param is not bool!")
+        }
+    }
 }
 
 pub struct Parameter {
-    name: String,
+    //name: String,
     data: Option<ParameterData>,
     default: ParameterData,
+}
+
+impl Parameter {
+    pub fn get_data(&self) -> ParameterData {
+        if self.data.is_none() {
+            self.default
+        } else {
+            self.data.unwrap()
+        }
+    }
 }
 
 #[derive(Args, Debug)]
@@ -49,84 +73,51 @@ struct Cli {
     value: Option<String>,
 }
 
-impl Parameter {
-    pub fn set(&mut self, val: ParameterData) {
-        self.data = Some(val);
-    }
+static PARAMS: LazyLock<DashMap<String, Parameter>> = LazyLock::new(|| DashMap::new());
 
-    /*
-       return the val of this parameter.
-       if the parameter val is None, then return the default value.
-    */
+pub fn get_params_map() -> &'static DashMap<String, Parameter> {
+    &PARAMS
+}
 
-    pub fn get(&self) -> &ParameterData {
-        &self.data.as_ref().unwrap_or(&self.default)
-    }
-
-    pub fn reset(&mut self) {
-        self.data = None;
+pub fn get_param(name: &str) -> Option<ParameterData> {
+    if let Some(parameter) = PARAMS.try_get(name).try_unwrap() {
+        Some(parameter.get_data())
+    } else {
+        None
     }
 }
 
-pub struct ParameterList {
-    data: HashMap<String, Parameter>,
-}
-
-impl ParameterList {
-    fn new() -> Self {
-        ParameterList {
-            data: HashMap::new(),
-        }
-    }
-
-    pub fn add(&mut self, name: &str, default: ParameterData) {
-        let mut param = Parameter {
-            name: name.to_string(),
-            data: None,
-            default,
-        };
-        self.data.insert(name.to_string(), param);
-    }
-
-    pub fn get_val(&self, name: &str) -> Option<&ParameterData> {
-        let a = self.data.get(name);
-
-        match a {
-            Some(param) => Some(param.get()),
-            None => None,
-        }
-    }
-
-    pub fn get(&mut self, name: &str) -> Option<&mut Parameter> {
-        self.data.get_mut(name)
+pub fn reset_param(name: &str) -> Result<(), ()> {
+    if let Some(mut x) = PARAMS.try_get_mut(name).try_unwrap() {
+        x.data = None;
+        Ok(())
+    } else {
+        Err(())
     }
 }
 
-static mut PARAMS: OnceLock<ParameterList> = OnceLock::new();
-
-pub fn with_params<F>(f: F) 
-where
-    F: FnMut((&String,&Parameter)),
-{
-    unsafe{PARAMS.get().unwrap().data.iter().for_each(f)};
-}
-
-pub fn get_param(name:&str)->Option<&mut Parameter>{
-    unsafe{
-        PARAMS.get_mut().unwrap().get(name)
+pub fn set_param(name: &str, val: ParameterData) -> Result<(), ()> {
+    if let Some(mut x) = PARAMS.try_get_mut(name).try_unwrap() {
+        x.data = Some(val);
+        Ok(())
+    } else {
+        Err(())
     }
 }
 
 pub fn add_param(name: &str, default: ParameterData) {
-    
-    // unsafe { 
-    //     PARAMS.get_mut_or_init(|| {
-    //         ParameterList::new()
-    //     }).add(name, default);
-    // }
+    assert!(name.len() < 16); // mavlink parameter name should < 16, let's follow them.
+    PARAMS.insert(
+        name.to_string(),
+        Parameter {
+            data: None,
+            default,
+        },
+    );
 }
 
-fn param_main(argc: u32, argv: *const &str) {
+fn param_main(_argc: u32, _argv: *const &str) {
+
     // let cli = Command::new("param");
     // let mut cli = Cli::augment_args(cli).disable_help_flag(true);
     // let argv = unsafe { std::slice::from_raw_parts(argv, argc as usize) };
@@ -186,45 +177,38 @@ mod tests {
 
     #[test]
     fn test_parameters_add() {
-        let mut params = ParameterList::new();
-        params.add("gyro_set", ParameterData::Int(0));
+        add_param("gyro_set", ParameterData::Int(0));
 
-        let val = params.get_val("gyro_set").unwrap();
+        let val = get_param("gyro_set").unwrap();
         assert_eq!(val.as_i32(), 0);
-        assert!(params.get_val("undefined").is_none());
+        assert!(get_param("undefined").is_none());
 
-        let x = params.get("gyro_set").unwrap();
-        x.set(ParameterData::Int(50));
+        let x = set_param("gyro_set", ParameterData::Int(50)).unwrap();
 
-        assert_eq!(x.data.as_ref().unwrap().as_i32(), 50);
-        assert_eq!(params.get_val("gyro_set").unwrap().as_i32(), 50);
+        assert_eq!(get_param("gyro_set").unwrap().as_i32(), 50);
     }
 
     #[test]
     fn test_parameters_f32() {
-        let mut params = ParameterList::new();
-        params.add("f32_test", ParameterData::Float(0.5));
+        add_param("f32_test", ParameterData::Float(0.5));
 
-        params
-            .get("f32_test")
-            .unwrap()
-            .set(ParameterData::Float((1.0)));
-        let val = params.get_val("f32_test").unwrap();
+        set_param("f32_test", ParameterData::Float(1.0));
+
+        let val = get_param("f32_test").unwrap();
         assert!(val.as_f32() > 0.9999);
         assert!(val.as_f32() < 1.0001);
-
-        params.get("f32_test").unwrap().reset();
-        let val = params.get_val("f32_test").unwrap();
-        assert!(val.as_f32() > 0.49999);
-        assert!(val.as_f32() < 0.50001);
     }
 
     #[test]
-    fn test_static_params() {
-        let list = unsafe { PARAMS.get_mut().unwrap() };
-        list.add("test", ParameterData::Int(0));
+    fn test_key_from_c() {
+        add_param("ctest", ParameterData::Bool(true));
+        let c_str = ['c' as u8, 't' as u8, 'e' as u8, 's' as u8, 't' as u8, 0, 0];
 
-        let val = unsafe { PARAMS.get().unwrap().get_val("test").unwrap() };
-        assert_eq!(val.as_i32(), 0);
+        assert!(PARAMS.contains_key(
+            std::ffi::CStr::from_bytes_until_nul(&c_str)
+                .unwrap()
+                .to_str()
+                .unwrap()
+        ));
     }
 }
