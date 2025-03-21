@@ -8,7 +8,7 @@ use rpos::{
 
 use quaternion_core::{normalize, Quaternion as Q};
 
-use crate::msg_define::{AttitudeMsg, Vector3Msg};
+use crate::msg_define::{Vector4, Vector3};
 
 use rpos::libc::c_long;
 
@@ -54,16 +54,16 @@ impl IMUUpdate {
 
 fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
     let sp = unsafe { Arc::from_raw(ptr as *const SchedulePthread) };
-    let mut gyro_rx = get_new_rx_of_message::<Vector3Msg>("gyro").unwrap();
-    let mut acc_rx = get_new_rx_of_message::<Vector3Msg>("acc").unwrap();
+    let mut gyro_rx = get_new_rx_of_message::<Vector3>("gyro").unwrap();
+    let mut acc_rx = get_new_rx_of_message::<Vector3>("acc").unwrap();
     let mut imu_update = IMUUpdate {
         q: (1.0, [0.0; 3]),
         imu_update_ki: 0.01,
         imu_update_kp: 2.0,
     };
 
-    // let q_tx: Sender<AttitudeMsg> = get_new_tx_of_message("attitude").unwrap();
-    let mut q_rx_debug: Receiver<AttitudeMsg> = get_new_rx_of_message("attitude").unwrap();
+    // let q_tx: Sender<Vector4> = get_new_tx_of_message("attitude").unwrap();
+    let mut q_rx_debug: Receiver<Vector4> = get_new_rx_of_message("attitude").unwrap();
 
     const IMU_UPDATE_T: f32 = 0.002;
     const IMU_UPDATE_T_US: c_long = (IMU_UPDATE_T * 1000.0 * 1000.0) as c_long;
@@ -79,7 +79,7 @@ fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
             gyro_data = [gyro_msg.x, gyro_msg.y, gyro_msg.z];
         }
         imu_update.update(acc_data, gyro_data, IMU_UPDATE_T);
-        let mut x = AttitudeMsg {
+        let mut x = Vector4 {
             w: 0.0,
             x: 0.0,
             y: 0.0,
@@ -90,7 +90,7 @@ fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
         }
         //let x_q = quaternion_core::mul(q,quaternion_core::from_axis_angle([0.0, 0.0, 1.0], -3.14159 / 2.0));
         println!("cal:{:?} , gazebo:{:?}", imu_update.q, x);
-        // q_tx.send(AttitudeMsg {
+        // q_tx.send(Vector4 {
         //     w: q.0,
         //     x: q.1[0],
         //     y: q.1[1],

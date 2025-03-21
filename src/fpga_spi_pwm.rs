@@ -8,7 +8,6 @@ use rpos::{msg::get_new_rx_of_message, pthread_scheduler::SchedulePthread, threa
 use spidev::{SpiModeFlags, Spidev, SpidevOptions, SpidevTransfer};
 
 use crate::{
-    elrs::client_process_args,
     mixer::{MixerOutputMsg, OutputMode},
 };
 

@@ -19,6 +19,7 @@ serialport = {version = "4.3.0",default-features = false}
 spidev = "0.6.0"
 mavlink = "0.13.1"
 dashmap = "6.1.0"
+serde_json = "1.0.140"
 
 [dev-dependencies]
 bitfield = "0.14"

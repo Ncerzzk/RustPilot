@@ -15,9 +15,9 @@ struct GazeboSim {
     #[allow(unused)]
     pose_index: RefCell<i32>,
     gz_sub_info: GzSubInfo,
-    gyro_tx: Sender<Vector3Msg>,
-    acc_tx: Sender<Vector3Msg>,
-    attitude_tx: Sender<AttitudeMsg>,
+    gyro_tx: Sender<Vector3>,
+    acc_tx: Sender<Vector3>,
+    attitude_tx: Sender<Vector4>,
 }
 
 #[derive(serde::Deserialize)]
@@ -42,12 +42,12 @@ impl GazeboSim {
         let acc_data = s.linear_acceleration;
         let attitude_data = s.orientation;
         let rotation = Rotation::Yaw270;
-        self.gyro_tx.send(rotation.rotate_v(Vector3Msg {
+        self.gyro_tx.send(rotation.rotate_v(Vector3 {
             x: gyro_data.x as f32,
             y: gyro_data.y as f32,
             z: gyro_data.z as f32,
         }));
-        self.acc_tx.send(rotation.rotate_v(Vector3Msg {
+        self.acc_tx.send(rotation.rotate_v(Vector3 {
             x: acc_data.x as f32,
             y: acc_data.y as f32,
             z: acc_data.z as f32,
@@ -67,7 +67,7 @@ impl GazeboSim {
         rotate_q is the rotate quaternion from gazebo axis to world axis(our defination): x -> -y_old ,  y -> x_old. 
         */
 
-        self.attitude_tx.send(AttitudeMsg {
+        self.attitude_tx.send(Vector4 {
             w: imu_q.0,
             x: imu_q.1[0],
             y: imu_q.1[1],

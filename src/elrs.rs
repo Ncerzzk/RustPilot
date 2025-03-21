@@ -54,25 +54,10 @@ impl Elrs {
     }
 }
 
-pub fn client_process_args<T:clap::Parser>(
-    argc: u32,
-    argv: *const &str
-) -> Option<T> {
 
-    let argv = unsafe { std::slice::from_raw_parts(argv, argc as usize) };
-
-    let ret = T::try_parse_from(argv);
-
-    if ret.is_err() {
-        let help_str = T::command().render_help();
-        thread_logln!("{}", help_str);
-        return None
-    }
-    ret.ok()
-}
 
 pub fn elrs_main(argc: u32, argv: *const &str) {
-    if let Some(args) = client_process_args::<Cli>(argc, argv) {
+    if let Some(args) = crate::basic::client_process_args::<Cli>(argc, argv) {
         let dev_name = &args.dev_name;
         let dev:Box<dyn Read>;
         if dev_name.contains("/dev/"){

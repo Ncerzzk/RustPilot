@@ -1,0 +1,120 @@
+{
+    "mixers": [
+      {
+        "bind_ctrl_group_id": 0,
+        "output_channel_idx": 0,
+        "mode": "Speed",
+        "list": [
+          {
+            "ctrl_group_id": 0,
+            "ctrl_channel": "Pitch",
+            "scaler": {
+              "scale_p": 1,
+              "scale_n": 1,
+              "offset": 0,
+              "min": -100,
+              "max": 100
+            }
+          },
+          {
+            "ctrl_group_id": 0,
+            "ctrl_channel": "Roll",
+            "scaler": {
+              "scale_p": -1,
+              "scale_n": -1,
+              "offset": 0,
+              "min": -100,
+              "max": 100
+            }
+          }
+        ]
+      },
+      {
+        "bind_ctrl_group_id": 0,
+        "output_channel_idx": 1,
+        "mode": "Speed",
+        "list": [
+          {
+            "ctrl_group_id": 0,
+            "ctrl_channel": "Pitch",
+            "scaler": {
+              "scale_p": -1,
+              "scale_n": -1,
+              "offset": 0,
+              "min": -100,
+              "max": 100
+            }
+          },
+          {
+            "ctrl_group_id": 0,
+            "ctrl_channel": "Roll",
+            "scaler": {
+              "scale_p": 1,
+              "scale_n": 1,
+              "offset": 0,
+              "min": -100,
+              "max": 100
+            }
+          }
+        ]
+      },
+      {
+        "bind_ctrl_group_id": 0,
+        "output_channel_idx": 2,
+        "mode": "Speed",
+        "list": [
+          {
+            "ctrl_group_id": 0,
+            "ctrl_channel": "Pitch",
+            "scaler": {
+              "scale_p": 1,
+              "scale_n": 1,
+              "offset": 0,
+              "min": -100,
+              "max": 100
+            }
+          },
+          {
+            "ctrl_group_id": 0,
+            "ctrl_channel": "Roll",
+            "scaler": {
+              "scale_p": 1,
+              "scale_n": 1,
+              "offset": 0,
+              "min": -100,
+              "max": 100
+            }
+          }
+        ]
+      },
+      {
+        "bind_ctrl_group_id": 0,
+        "output_channel_idx": 3,
+        "mode": "Speed",
+        "list": [
+          {
+            "ctrl_group_id": 0,
+            "ctrl_channel": "Pitch",
+            "scaler": {
+              "scale_p": -1,
+              "scale_n": -1,
+              "offset": 0,
+              "min": -100,
+              "max": 100
+            }
+          },
+          {
+            "ctrl_group_id": 0,
+            "ctrl_channel": "Roll",
+            "scaler": {
+              "scale_p": -1,
+              "scale_n": -1,
+              "offset": 0,
+              "min": -100,
+              "max": 100
+            }
+          }
+        ]
+      }
+    ]
+  }

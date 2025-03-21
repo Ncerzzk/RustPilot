@@ -1,7 +1,7 @@
 use clap::Parser;
 use rpos::{msg::get_new_rx_of_message, thread_logln};
 
-use crate::{elrs::client_process_args, msg_define::*};
+use crate::{ msg_define::*};
 
 #[derive(Parser, Debug)]
 #[command(name = "msg_echo", version, about="a dirty implement to debug")]
@@ -16,7 +16,7 @@ struct Cli {
 
 
 fn msg_echo_main(argc:u32, argv:*const &str){
-    if let Some(args) = client_process_args::<Cli>(argc, argv){
+    if let Some(args) = crate::basic::client_process_args::<Cli>(argc, argv){
         let mut func:Box<dyn FnMut() -> ()>;
         if args.topic == "rc_input"{
             let mut rx = get_new_rx_of_message::<RcInputMsg>(&args.topic).unwrap();
