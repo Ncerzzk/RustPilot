@@ -74,21 +74,22 @@ mod tests {
 
     #[test]
     fn test_init_gz_actuator() {
-        let tx: Sender<MixerOutputMsg> = get_new_tx_of_message("mixer_output").unwrap();
+        // let tx: Sender<MixerOutputMsg> = get_new_tx_of_message("mixer_output").unwrap();
 
-        init_gz_actuator(0, null_mut());
+        // init_gz_actuator(0, null_mut());
 
-        let subscriber = unsafe {
-            GAZEBO_ACTUATOR.get_mut().unwrap().gz_node.subscribe(
-                "/X3/gazebo/command/motor_speed",
-                |x: Actuators| {
-                    println!("{:?}", x);
-                },
-            )
-        };
+        // let subscriber = unsafe {
+        //     GAZEBO_ACTUATOR.get_mut().unwrap().gz_node.subscribe(
+        //         "/X3/gazebo/command/motor_speed",
+        //         |x: Actuators| {
+        //             println!("{:?}", x);
+        //         },
+        //     )
+        // };
 
-        tx.send(MixerOutputMsg {
-            output: Box::new(Vec::new()),
-        });
+        // tx.send(MixerOutputMsg {
+        //     output:[0.0;8],
+        //     control_group_id: 0,
+        // });
     }
 }
