@@ -1,9 +1,9 @@
 use clap::Parser;
-use rpos::thread_logln;
-use std::sync::Arc;
+use rpos::{thread_logln, msg::get_new_tx_of_message};
+use std::{sync::Arc};
 
 use crate::{
-    param::{self, ParameterData},
+    param::{self, ParameterData}, msg_define::RcInputMsg,
 };
 use mavlink::{
     common::{self, MavMessage},
@@ -15,6 +15,10 @@ use mavlink::{
 struct Cli {
     #[arg(short, long, value_name = "addr")]
     addr: String,
+
+    #[arg(long, help = "use joystick provided by ground station")]
+    joystick: bool,
+    
 }
 
 fn get_mav_paramtype(p: &param::ParameterData) -> common::MavParamType {
@@ -109,6 +113,14 @@ pub unsafe fn init_mavlink_gs(argc: u32, argv: *const &str) {
         library_version_hash: [0; 8],
     });
 
+    let rc_input_tx;
+
+    if args.joystick{
+        rc_input_tx = Some(get_new_tx_of_message::<RcInputMsg>("rc_input").unwrap());
+    }else{
+        rc_input_tx = None;
+    }
+
     loop {
         match mavconn.recv() {
             Ok((_header, msg)) => {
@@ -192,8 +204,13 @@ pub unsafe fn init_mavlink_gs(argc: u32, argv: *const &str) {
                     }
 
                     MavMessage::HEARTBEAT(_) => {}
-                    MavMessage::MANUAL_CONTROL(_) => {
-                        // thread_logln!("received: {msg:?}");
+                    MavMessage::MANUAL_CONTROL(data) => {
+                        if let Some(ref tx) = rc_input_tx{
+                            let mut vals = [0;8];
+                            vals[2] = (data.z - 500) * 2;   // map 0-1000 to -1000 to 1000
+                            tx.send(RcInputMsg { channel_vals: vals })
+                        }
+                        //thread_logln!("received: {msg:?}");
                     }
                     _ => {
                         thread_logln!("received: {msg:?}");

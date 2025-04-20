@@ -82,7 +82,7 @@ pub struct ManualControlMsg{
 
 #[derive(Debug,Clone)]
 pub struct RcInputMsg{
-    pub channel_vals:[i16;8]
+    pub channel_vals:[i16;8]   // -1000~1000
 }
 
 #[allow(dead_code)]
@@ -104,7 +104,7 @@ fn register_msgs(){
     add_message::<Vector4>("attitude");
     //add_message::<EulerVector3>("att_target_euler");
     add_message::<AttitudeSetPointMsg>("att_target");
-    add_message::<TorqueThrustMsg>("controller_output");
+    add_message::<TorqueThrustMsg>("toreque_thrust_setpoint");
     //add_message::<ControllerOutputGroupMsg>("controller_output0");
     //add_message::<ControllerOutputGroupMsg>("controller_output1");
     add_message:: <MixerOutputMsg>("mixer_output");
