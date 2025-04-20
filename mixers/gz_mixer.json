@@ -26,6 +26,17 @@
               "min": -100,
               "max": 100
             }
+          },
+          {
+            "ctrl_group_id": 0,
+            "ctrl_channel": "ThrustZ",
+            "scaler": {
+              "scale_p": 1000,
+              "scale_n": 1000,
+              "offset": 0,
+              "min": 0,
+              "max": 1000
+            }
           }
         ]
       },
@@ -54,6 +65,17 @@
               "offset": 0,
               "min": -100,
               "max": 100
+            }
+          },
+          {
+            "ctrl_group_id": 0,
+            "ctrl_channel": "ThrustZ",
+            "scaler": {
+              "scale_p": 1000,
+              "scale_n": 1000,
+              "offset": 0,
+              "min": 0,
+              "max": 1000
             }
           }
         ]
@@ -84,6 +106,17 @@
               "min": -100,
               "max": 100
             }
+          },
+          {
+            "ctrl_group_id": 0,
+            "ctrl_channel": "ThrustZ",
+            "scaler": {
+              "scale_p": 1000,
+              "scale_n": 1000,
+              "offset": 0,
+              "min": 0,
+              "max": 1000
+            }
           }
         ]
       },
@@ -112,6 +145,17 @@
               "offset": 0,
               "min": -100,
               "max": 100
+            }
+          },
+          {
+            "ctrl_group_id": 0,
+            "ctrl_channel": "ThrustZ",
+            "scaler": {
+              "scale_p": 1000,
+              "scale_n": 1000,
+              "offset": 0,
+              "min": 0,
+              "max": 1000
             }
           }
         ]

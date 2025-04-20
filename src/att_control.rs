@@ -51,7 +51,7 @@ fn att_control_main(ptr: *mut c_void) -> *mut c_void {
     let mut att_ctrler = AttitudeController {
         pitch_controller: PIDController::new(100.0, 0.0, 0.0),
         roll_controller: PIDController::new(100.0, 0.0, 0.0),
-        tx: get_new_tx_of_message("controller_output").unwrap(),
+        tx: get_new_tx_of_message("toreque_thrust_setpoint").unwrap(),
     };
 
     let mut att_target_q: Q<f32> = (1.0, [0.0, 0.0, 0.0]);
