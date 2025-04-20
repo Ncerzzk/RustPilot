@@ -197,7 +197,7 @@ impl SumMixer {
             if (i.ctrl_channel as u8) < 3 {
                 input = ctrl_out.torques[i.ctrl_channel as usize];
             } else if (i.ctrl_channel as u8) < 6 {
-                input = ctrl_out.thrusts[i.ctrl_channel as usize];
+                input = ctrl_out.thrusts[i.ctrl_channel as usize - 3];
             } else {
                 panic!("error index!");
             }
@@ -225,7 +225,7 @@ pub unsafe fn init_mixer(argc: u32, argv: *const &str) {
         panic!("error arg num of mixer!");
     }
 
-    let rx = get_new_rx_of_message::<TorqueThrustMsg>("controller_output").unwrap();
+    let rx = get_new_rx_of_message::<TorqueThrustMsg>("toreque_thrust_setpoint").unwrap();
     rx.register_callback("mixer_listner", move |x: &TorqueThrustMsg| {
         mixer.update_ctrl_outputs(x);
     });
@@ -246,7 +246,7 @@ mod tests {
 
     #[test]
     fn test_init_mixer() {
-        let tx = get_new_tx_of_message::<TorqueThrustMsg>("controller_output").unwrap();
+        let tx = get_new_tx_of_message::<TorqueThrustMsg>("toreque_thrust_setpoint").unwrap();
         let mut rx =get_new_rx_of_message::<MixerOutputMsg>("mixer_output").unwrap();
         unsafe {
             init_mixer(1, null_mut());
