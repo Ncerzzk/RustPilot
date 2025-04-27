@@ -1,10 +1,11 @@
 use std::{ffi::c_void, ptr::null_mut, sync::Arc};
 
 use rpos::{
-    channel::Receiver,
-    msg::{get_new_rx_of_message},
-    pthread_scheduler::SchedulePthread,
+    channel::Receiver, msg::get_new_rx_of_message, pthread_scheduler::SchedulePthread
 };
+
+use crate::basic::rotation::get_euler_degree;
+use crate::utils::udp_scope::UdpScope;
 
 use quaternion_core::{normalize, Quaternion as Q};
 
@@ -16,6 +17,8 @@ struct IMUUpdate {
     q: Q<f32>,
     imu_update_ki: f32,
     imu_update_kp: f32,
+    err_i:[f32;3],
+    scope:UdpScope // for debug
 }
 
 impl IMUUpdate {
@@ -25,15 +28,14 @@ impl IMUUpdate {
         let acc_normed = quaternion_core::normalize(acc);
 
         let acc_rotate = quaternion_core::frame_rotation(self.q, [0.0, 0.0, 1.0]);
-        let mut err = quaternion_core::cross(acc_normed, acc_rotate); // use the product of cross as the err
-        let mut err_i: [f32; 3] = [0.0; 3];
+        let err = quaternion_core::cross(acc_normed, acc_rotate); // use the product of cross as the err
 
-        for (index, err_item) in err.iter_mut().enumerate() {
+        //self.scope.send_wave(&[gyro_data[0],gyro_data[1],gyro_data[2],gyro_data[2]]);
+        for (index, err_item) in err.iter().enumerate() {
             if err_item.is_normal() {
-                err_i[index] += (*err_item) * dt * self.imu_update_ki;
-                *err_item = (*err_item) * self.imu_update_kp + err_i[index];
+                self.err_i[index] += (*err_item) * dt * self.imu_update_ki;
 
-                gyro_data[index] += *err_item;
+                gyro_data[index] +=  (*err_item) * self.imu_update_kp + self.err_i[index];
             }
         }
 
@@ -58,14 +60,16 @@ fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
     let mut acc_rx = get_new_rx_of_message::<Vector3>("acc").unwrap();
     let mut imu_update = IMUUpdate {
         q: (1.0, [0.0; 3]),
-        imu_update_ki: 0.01,
+        imu_update_ki: 0.2,
         imu_update_kp: 2.0,
+        err_i:[0.0;3],
+        scope:UdpScope::new()
     };
 
     // let q_tx: Sender<Vector4> = get_new_tx_of_message("attitude").unwrap();
     let mut q_rx_debug: Receiver<Vector4> = get_new_rx_of_message("attitude").unwrap();
 
-    const IMU_UPDATE_T: f32 = 0.002;
+    const IMU_UPDATE_T: f32 = 0.010;
     const IMU_UPDATE_T_US: c_long = (IMU_UPDATE_T * 1000.0 * 1000.0) as c_long;
 
     let mut acc_data: [f32; 3] = [0.0; 3];
@@ -88,14 +92,13 @@ fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
         if let Some(msg) = q_rx_debug.try_read() {
             x = msg;
         }
-        //let x_q = quaternion_core::mul(q,quaternion_core::from_axis_angle([0.0, 0.0, 1.0], -3.14159 / 2.0));
-        println!("cal:{:?} , gazebo:{:?}", imu_update.q, x);
-        // q_tx.send(Vector4 {
-        //     w: q.0,
-        //     x: q.1[0],
-        //     y: q.1[1],
-        //     z: q.1[2],
-        // });
+
+        let gazebo_q = (x.w,[x.x,x.y,x.z]);
+        // let euler_cal = get_euler_degree(imu_update.q);
+        // let euler_gz = get_euler_degree(gazebo_q);
+
+        //imu_update.scope.send_wave(&[euler_cal[0],euler_cal[1],euler_gz[0],euler_gz[1]]);
+
         sp.schedule_until(IMU_UPDATE_T_US);
     }
     #[allow(unreachable_code)]
@@ -103,8 +106,7 @@ fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
 }
 
 pub fn init_imu_update(_argc: u32, _argv: *const &str) {
-    SchedulePthread::new(1024 * 1024, 97, imu_update_main, null_mut(), false, None);
-    // TODO edit pthread_key
+    SchedulePthread::new(1024 * 1024, 97, imu_update_main, null_mut(), false);
 }
 
 #[rpos::ctor::ctor]
@@ -125,6 +127,7 @@ mod tests {
             q: (1.0, [0.0, 0.0, 0.0]),
             imu_update_ki: 0.0,
             imu_update_kp: 0.0,
+            err_i: [0.0;3],
         };
 
         let target_rad = 90.0 / 180.0 * PI;
