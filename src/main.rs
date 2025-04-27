@@ -20,6 +20,7 @@ mod manual_ctrl;
 mod msg_echo;
 mod mavlink_gs;
 mod basic;
+mod utils;
 
 use rpos::module::Module;
 use rpos::libc;
