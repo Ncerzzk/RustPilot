@@ -17,8 +17,8 @@ struct IMUUpdate {
     q: Q<f32>,
     imu_update_ki: f32,
     imu_update_kp: f32,
-    err_i:[f32;3],
-    scope:UdpScope // for debug
+    err_i:[f32;3]
+    // scope:UdpScope // for debug
 }
 
 impl IMUUpdate {
@@ -62,8 +62,7 @@ fn imu_update_main(ptr: *mut c_void) -> *mut c_void {
         q: (1.0, [0.0; 3]),
         imu_update_ki: 0.2,
         imu_update_kp: 2.0,
-        err_i:[0.0;3],
-        scope:UdpScope::new()
+        err_i:[0.0;3]
     };
 
     // let q_tx: Sender<Vector4> = get_new_tx_of_message("attitude").unwrap();

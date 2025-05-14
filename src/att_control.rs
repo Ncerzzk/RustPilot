@@ -107,7 +107,7 @@ pub fn init_att_control(_argc: u32, _argv: *const &str) {
     param::add_param("att_Kp", param::ParameterData::Float(0.0));
     param::add_param("att_Ki", param::ParameterData::Float(0.0));
     param::add_param("att_Kd", param::ParameterData::Float(0.0));
-    SchedulePthread::new(16384, 98, att_control_main, null_mut(), false, None); // TODO edit pthread_key
+    SchedulePthread::new(16384, 98, att_control_main, null_mut(), false); // TODO edit pthread_key
 }
 
 #[rpos::ctor::ctor]
