@@ -18,7 +18,6 @@ struct Cli {
 
     #[arg(long, help = "use joystick provided by ground station")]
     joystick: bool,
-    
 }
 
 fn get_mav_paramtype(p: &param::ParameterData) -> common::MavParamType {
@@ -128,7 +127,7 @@ pub unsafe fn init_mavlink_gs(argc: u32, argv: *const &str) {
                     MavMessage::COMMAND_LONG(ref data) => {
                         let req_message_id = data.param1 as u32;
                         if data.command != common::MavCmd::MAV_CMD_REQUEST_MESSAGE {
-                            thread_logln!("unsupport cmd: {msg:?}");
+                            println!("unsupport cmd: {msg:?}");
                         }
                         let ack = MavMessage::COMMAND_ACK(common::COMMAND_ACK_DATA {
                             command: common::MavCmd::MAV_CMD_REQUEST_MESSAGE,
@@ -138,13 +137,13 @@ pub unsafe fn init_mavlink_gs(argc: u32, argv: *const &str) {
                         if req_message_id == autopilot_version.message_id() {
                             let _ = mavconn.send(&header, &autopilot_version);
                             let _ = mavconn.send(&header, &ack);
-                            thread_logln!("send autopilot version back!");
+                            println!("send autopilot version back!");
                         } else if req_message_id == protocol_version.message_id() {
                             let _ = mavconn.send(&header, &protocol_version);
                             let _ = mavconn.send(&header, &ack);
-                            thread_logln!("send protocol version back!");
+                            println!("send protocol version back!");
                         } else {
-                            thread_logln!("unsupport request for messageid:{req_message_id}");
+                            println!("unsupport request for messageid:{req_message_id}");
                         }
                     }
                     MavMessage::PARAM_REQUEST_LIST(_) => {
@@ -153,7 +152,7 @@ pub unsafe fn init_mavlink_gs(argc: u32, argv: *const &str) {
                         let param_count = params.len() as u16;
                         let mut param_index = 0;
 
-                        thread_logln!("recv param req list!");
+                        println!("recv param req list!");
                         for i in params {
                             let mut param_id = [0 as u8; 16];
                             param_id[..i.key().len()].copy_from_slice(i.key().as_bytes());
@@ -166,7 +165,7 @@ pub unsafe fn init_mavlink_gs(argc: u32, argv: *const &str) {
                             });
                             let _ = mavconn.send(&header, &param_msg);
 
-                            thread_logln!("send param!");
+                            println!("send param!");
                             param_index += 1;
                         }
                     }
@@ -210,10 +209,10 @@ pub unsafe fn init_mavlink_gs(argc: u32, argv: *const &str) {
                             vals[2] = (data.z - 500) * 2;   // map 0-1000 to -1000 to 1000
                             tx.send(RcInputMsg { channel_vals: vals })
                         }
-                        //thread_logln!("received: {msg:?}");
+                        //println!("received: {msg:?}");
                     }
                     _ => {
-                        thread_logln!("received: {msg:?}");
+                        println!("received: {msg:?}");
                     }
                 }
             }
@@ -223,7 +222,7 @@ pub unsafe fn init_mavlink_gs(argc: u32, argv: *const &str) {
                     std::thread::sleep(std::time::Duration::from_secs(1));
                     continue;
                 } else {
-                    thread_logln!("recv error: {e:?}");
+                    println!("recv error: {e:?}");
                     break;
                 }
             }
