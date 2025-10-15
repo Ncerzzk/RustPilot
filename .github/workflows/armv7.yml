@@ -15,7 +15,7 @@ jobs:
     container: ghcr.io/cross-rs/armv7-unknown-linux-gnueabihf:edge
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
       with:
@@ -24,7 +24,7 @@ jobs:
             components: rustfmt, clippy
     - name: submodule
       run: git config --global --add safe.directory /__w/RustPilot/RustPilot && git submodule update --init
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build
       run: rustup target add armv7-unknown-linux-gnueabihf && cargo build --verbose --target armv7-unknown-linux-gnueabihf
     - name: Run tests

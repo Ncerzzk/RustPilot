@@ -1,0 +1,148 @@
+<mujoco model="Skydio X2">
+  <compiler autolimits="true" assetdir="assets"/>
+
+  <option timestep="0.02" density="1.225" viscosity="1.8e-5"/>
+
+  <default>
+    <default class="x2">
+      <geom mass="0"/>
+      <motor ctrlrange="0 13"/>
+      <mesh scale="0.01 0.01 0.01"/>
+      <default class="visual">
+        <geom group="2" type="mesh" contype="0" conaffinity="0"/>
+      </default>
+      <default class="collision">
+        <geom group="3" type="box"/>
+        <default class="rotor">
+          <geom type="ellipsoid" size=".13 .13 .01"/>
+        </default>
+      </default>
+      <site group="5"/>
+    </default>
+  </default>
+
+  <asset>
+    <texture type="2d" file="X2_lowpoly_texture_SpinningProps_1024.png"/>
+    <material name="phong3SG" texture="X2_lowpoly_texture_SpinningProps_1024"/>
+    <material name="invisible" rgba="0 0 0 0"/>
+
+    <mesh class="x2" file="X2_lowpoly.obj"/>
+  </asset>
+
+  <worldbody>
+    <light name="spotlight" mode="targetbodycom" target="x2" pos="0 -1 2"/>
+    <body name="x2" pos="0 0 0.1" childclass="x2">
+      <freejoint/>
+      <!-- X-forward looking camera -->
+      <camera name="front_cam" pos="0.2 0 0.05" quat="0.9239 0 -0.3827 0" mode="fixed"/>
+
+      <!-- Z-downward facing camera -->
+      <camera name="down_cam" pos="0 0 -0.05" quat="1 0 0 0" mode="fixed"/>
+
+      <!-- X-rear view camera -->
+      <camera name="rear_cam" pos="-0.2 0 0.05" quat="0.7071 0 0.7071 0" mode="fixed"/>
+
+      <!-- Y-left-looking camera -->
+      <camera name="left_cam" pos="0 0.15 0.05" quat="0.7071 0 0 0.7071" mode="fixed"/>
+
+      <!-- Y-right-looking camera -->
+      <camera name="right_cam" pos="0 -0.15 0.05" quat="0.7071 0 0 -0.7071" mode="fixed"/>
+
+      <site name="imu" pos="0 0 .02"/>
+      <geom material="phong3SG" mesh="X2_lowpoly" class="visual" quat="0 0 1 1"/>
+      <geom class="collision" size=".06 .027 .02" pos=".04 0 .02"/>
+      <geom class="collision" size=".06 .027 .02" pos=".04 0 .06"/>
+      <geom class="collision" size=".05 .027 .02" pos="-.07 0 .065"/>
+      <geom class="collision" size=".023 .017 .01" pos="-.137 .008 .065" quat="1 0 0 1"/>
+      <geom name="rotor1" class="rotor" pos="-.14 -.18 .05" mass=".25"/>
+      <geom name="rotor2" class="rotor" pos="-.14 .18 .05" mass=".25"/>
+      <geom name="rotor3" class="rotor" pos=".14 .18 .08" mass=".25"/>
+      <geom name="rotor4" class="rotor" pos=".14 -.18 .08" mass=".25"/>
+      <geom size=".16 .04 .02" pos="0 0 0.02" type="ellipsoid" mass=".325" class="visual" material="invisible"/>
+      <site name="thrust1" pos="-.14 -.18 .05"/>
+      <site name="thrust2" pos="-.14 .18 .05"/>
+      <site name="thrust3" pos=".14 .18 .08"/>
+      <site name="thrust4" pos=".14 -.18 .08"/>
+
+      <!-- simple Render range -->
+      <site name="rf_front" pos="0.1 0 0.05" zaxis="1 0 0"/>
+      <site name="rf_left" pos="0 0 0.01" zaxis="0 -1 0"/>
+      <site name="rf_down" pos="0 0 -0.05" zaxis="0 0 -1"/> 
+      <site name="rf_right" pos="0 0.1 0.05" zaxis="0 1 0"/>
+
+      <!-- 360 Lidar -->
+      <site name="rf_0" pos="0.1 0 0.05" zaxis="1 0 0"/>
+      <site name="rf_15" pos="0.1 0 0.05" zaxis="0.9659 0.2588 0"/>
+      <site name="rf_30" pos="0.1 0 0.05" zaxis="0.8660 0.5 0"/>
+      <site name="rf_45" pos="0.1 0 0.05" zaxis="0.7071 0.7071 0"/>
+      <site name="rf_60" pos="0.1 0 0.05" zaxis="0.5 0.8660 0"/>
+      <site name="rf_75" pos="0.1 0 0.05" zaxis="0.2588 0.9659 0"/>
+      <site name="rf_90" pos="0.1 0 0.05" zaxis="0 1 0"/>
+      <site name="rf_105" pos="0.1 0 0.05" zaxis="-0.2588 0.9659 0"/>
+      <site name="rf_120" pos="0.1 0 0.05" zaxis="-0.5 0.8660 0"/>
+      <site name="rf_135" pos="0.1 0 0.05" zaxis="-0.7071 0.7071 0"/>
+      <site name="rf_150" pos="0.1 0 0.05" zaxis="-0.8660 0.5 0"/>
+      <site name="rf_165" pos="0.1 0 0.05" zaxis="-0.9659 0.2588 0"/>
+      <site name="rf_180" pos="0.1 0 0.05" zaxis="-1 0 0"/>
+      <site name="rf_195" pos="0.1 0 0.05" zaxis="-0.9659 -0.2588 0"/>
+      <site name="rf_210" pos="0.1 0 0.05" zaxis="-0.8660 -0.5 0"/>
+      <site name="rf_225" pos="0.1 0 0.05" zaxis="-0.7071 -0.7071 0"/>
+      <site name="rf_240" pos="0.1 0 0.05" zaxis="-0.5 -0.8660 0"/>
+      <site name="rf_255" pos="0.1 0 0.05" zaxis="-0.2588 -0.9659 0"/>
+      <site name="rf_270" pos="0.1 0 0.05" zaxis="0 -1 0"/>
+      <site name="rf_285" pos="0.1 0 0.05" zaxis="0.2588 -0.9659 0"/>
+      <site name="rf_300" pos="0.1 0 0.05" zaxis="0.5 -0.8660 0"/>
+      <site name="rf_315" pos="0.1 0 0.05" zaxis="0.7071 -0.7071 0"/>
+      <site name="rf_330" pos="0.1 0 0.05" zaxis="0.8660 -0.5 0"/>
+      <site name="rf_345" pos="0.1 0 0.05" zaxis="0.9659 -0.2588 0"/>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <motor class="x2" name="thrust1" site="thrust1" gear="0 0 1 0 0 -.0201"/>
+    <motor class="x2" name="thrust2" site="thrust2" gear="0 0 1 0 0  .0201"/>
+    <motor class="x2" name="thrust3" site="thrust3" gear="0 0 1 0 0  .0201"/>
+    <motor class="x2" name="thrust4" site="thrust4" gear="0 0 1 0 0 -.0201"/>
+  </actuator>
+
+  <sensor>
+    <gyro name="body_gyro" site="imu"/>
+    <accelerometer name="body_linacc" site="imu"/>
+    <framequat name="body_quat" objtype="site" objname="imu"/>
+
+    <!-- <rangefinder name="body_rf_front" site="rf_front"/>
+    <rangefinder name="body_rf_left" site="rf_left"/>
+    <rangefinder name="body_rf_down" site="rf_down"/>
+    <rangefinder name="body_rf_right" site="rf_right"/> -->
+
+    <!-- 360 Lidar -->
+    <rangefinder name="body_rf_0" site="rf_0" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_15" site="rf_15" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_30" site="rf_30" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_45" site="rf_45" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_60" site="rf_60" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_75" site="rf_75" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_90" site="rf_90" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_105" site="rf_105" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_120" site="rf_120" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_135" site="rf_135" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_150" site="rf_150" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_165" site="rf_165" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_180" site="rf_180" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_195" site="rf_195" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_210" site="rf_210" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_225" site="rf_225" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_240" site="rf_240" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_255" site="rf_255" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_270" site="rf_270" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_285" site="rf_285" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_300" site="rf_300" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_315" site="rf_315" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_330" site="rf_330" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_345" site="rf_345" cutoff="10" noise="0.01"/>
+  </sensor>
+
+  <keyframe>
+    <key name="hover" qpos="0 0 .3 1 0 0 0" ctrl="3.2495625 3.2495625 3.2495625 3.2495625"/>
+  </keyframe>
+</mujoco>

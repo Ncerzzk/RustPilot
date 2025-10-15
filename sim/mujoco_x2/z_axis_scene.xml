@@ -1,0 +1,115 @@
+<mujoco model="Skydio X2 scene">
+  <!-- <include file="axis_x2.xml"/> -->
+  <compiler autolimits="true" assetdir="assets"/>
+  <option timestep="0.01" density="1.225" viscosity="1.8e-5"/>
+
+  <statistic center="0 0 0.1" extent="0.6" meansize=".05"/>
+
+  <default>
+    <default class="x2">
+      <geom mass="0" contype="1" conaffinity="1"/>
+      <motor ctrlrange="0 13"/>
+      <mesh scale="0.01 0.01 0.01"/>
+      <default class="visual">
+        <geom group="2" type="mesh" contype="0" conaffinity="0"/>
+      </default>
+      <default class="collision">
+        <geom group="3" type="box" contype="1" conaffinity="1"/>
+        <default class="rotor">
+          <geom type="ellipsoid" size=".13 .13 .01" contype="1" conaffinity="1"/>
+        </default>
+      </default>
+      <site group="5"/>
+    </default>
+  </default>  
+  
+  <asset>
+    <texture type="2d" file="X2_lowpoly_texture_SpinningProps_1024.png"/>
+    <material name="phong3SG" texture="X2_lowpoly_texture_SpinningProps_1024"/>
+    <material name="invisible" rgba="0 0 0 0"/>
+
+    <mesh class="x2" file="X2_lowpoly.obj"/>
+  </asset>
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="-20" elevation="-20" ellipsoidinertia="true"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+      markrgb="0.8 0.8 0.8" width="300" height="300"/>
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+    <material name="building_mat" rgba="0.5 0.5 0.5 1"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
+
+    <!-- rotation about an axis -->
+    <body name="axis_support" pos="0 0 2.2">
+      <geom name="axis_geom" type="capsule" size="0.015 0.3" rgba="0.8 0.2 0.2 1" fromto="0 0 -3.5 0 0 3.5"/>
+      <body name="drone_mount" pos="0 0 0">
+        <joint name="axis_hinge" type="hinge" axis="0 0 1" limited="false" damping="0.001"/>
+        <!--  fixed x2 model -->
+        <include file="axis_x2.xml"/> 
+      </body>
+    </body>
+  
+  </worldbody>
+
+  
+  <actuator>
+    <motor class="x2" name="thrust1" site="thrust1" gear="0 0 1 0 0 -.0201"/>
+    <motor class="x2" name="thrust2" site="thrust2" gear="0 0 1 0 0  .0201"/>
+    <motor class="x2" name="thrust3" site="thrust3" gear="0 0 1 0 0  .0201"/>
+    <motor class="x2" name="thrust4" site="thrust4" gear="0 0 1 0 0 -.0201"/>
+  </actuator>
+
+  <sensor>
+    <gyro name="body_gyro" site="imu"/>
+    <accelerometer name="body_linacc" site="imu"/>
+    <framequat name="body_quat" objtype="site" objname="imu"/>
+    
+    <rangefinder name="body_rf_front" site="rf_front"/>
+    <rangefinder name="body_rf_left"  site="rf_left"/>
+    <rangefinder name="body_rf_down"  site="rf_down"/>
+    <rangefinder name="body_rf_right" site="rf_right"/>
+
+    
+    <!-- 360 Lidar -->
+    <rangefinder name="body_rf_0" site="rf_0" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_15" site="rf_15" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_30" site="rf_30" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_45" site="rf_45" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_60" site="rf_60" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_75" site="rf_75" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_90" site="rf_90" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_105" site="rf_105" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_120" site="rf_120" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_135" site="rf_135" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_150" site="rf_150" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_165" site="rf_165" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_180" site="rf_180" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_195" site="rf_195" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_210" site="rf_210" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_225" site="rf_225" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_240" site="rf_240" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_255" site="rf_255" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_270" site="rf_270" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_285" site="rf_285" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_300" site="rf_300" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_315" site="rf_315" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_330" site="rf_330" cutoff="10" noise="0.01"/>
+    <rangefinder name="body_rf_345" site="rf_345" cutoff="10" noise="0.01"/>
+
+  </sensor>
+
+  <keyframe>
+    <key name="hover" qpos="0" ctrl="3.25 3.25 3.25 3.25"/>
+  </keyframe>
+
+</mujoco>

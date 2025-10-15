@@ -1,0 +1,72 @@
+
+
+<worldbody>
+  <light name="spotlight" mode="targetbodycom" target="x2" pos="0 -1 2"/>
+  <body name="x2" pos="0 0 0.1" childclass="x2">
+    <!-- <freejoint/> -->
+      <!-- X-forward looking camera -->
+    <camera name="front_cam" pos="0.2 0 0.05" quat="0.9239 0 -0.3827 0" mode="fixed"/>
+
+    <!-- Z-downward facing camera -->
+    <camera name="down_cam" pos="0 0 -0.05" quat="1 0 0 0" mode="fixed"/>
+
+    <!-- X-rear view camera -->
+    <camera name="rear_cam" pos="-0.2 0 0.05" quat="0.7071 0 0.7071 0" mode="fixed"/>
+
+    <!-- Y-left-looking camera -->
+    <camera name="left_cam" pos="0 0.15 0.05" quat="0.7071 0 0 0.7071" mode="fixed"/>
+
+    <!-- Y-right-looking camera -->
+    <camera name="right_cam" pos="0 -0.15 0.05" quat="0.7071 0 0 -0.7071" mode="fixed"/>
+
+    <site name="imu" pos="0 0 .02"/>
+    <geom material="phong3SG" mesh="X2_lowpoly" class="visual" quat="0 0 1 1"/>
+    <geom class="collision" size=".06 .027 .02" pos=".04 0 .02"/>
+    <geom class="collision" size=".06 .027 .02" pos=".04 0 .06"/>
+    <geom class="collision" size=".05 .027 .02" pos="-.07 0 .065"/>
+    <geom class="collision" size=".023 .017 .01" pos="-.137 .008 .065" quat="1 0 0 1"/>
+    <geom name="rotor1" class="rotor" pos="-.14 -.18 .05" mass=".25"/>
+    <geom name="rotor2" class="rotor" pos="-.14 .18 .05" mass=".25"/>
+    <geom name="rotor3" class="rotor" pos=".14 .18 .08" mass=".25"/>
+    <geom name="rotor4" class="rotor" pos=".14 -.18 .08" mass=".25"/>
+    <geom size=".16 .04 .02" pos="0 0 0.02" type="ellipsoid" mass=".325" class="visual" material="invisible"/>
+
+    <site name="thrust1" pos="-.14 -.18 .05"/>
+    <site name="thrust2" pos="-.14 .18 .05"/>
+    <site name="thrust3" pos=".14 .18 .08"/>
+    <site name="thrust4" pos=".14 -.18 .08"/>
+
+    <!-- simple Render range -->
+    <site name="rf_front" pos="0.1 0 0.05" zaxis="1 0 0"/>
+    <site name="rf_left" pos="0 0 0.01" zaxis="0 -1 0"/>
+    <site name="rf_down" pos="0 0 -0.05" zaxis="0 0 -1"/> 
+    <site name="rf_right" pos="0 0.1 0.05" zaxis="0 1 0"/>
+
+    <!-- 360 Lidar -->
+    <site name="rf_0" pos="0.1 0 0.05" zaxis="1 0 0"/>
+    <site name="rf_15" pos="0.1 0 0.05" zaxis="0.9659 0.2588 0"/>
+    <site name="rf_30" pos="0.1 0 0.05" zaxis="0.8660 0.5 0"/>
+    <site name="rf_45" pos="0.1 0 0.05" zaxis="0.7071 0.7071 0"/>
+    <site name="rf_60" pos="0.1 0 0.05" zaxis="0.5 0.8660 0"/>
+    <site name="rf_75" pos="0.1 0 0.05" zaxis="0.2588 0.9659 0"/>
+    <site name="rf_90" pos="0.1 0 0.05" zaxis="0 1 0"/>
+    <site name="rf_105" pos="0.1 0 0.05" zaxis="-0.2588 0.9659 0"/>
+    <site name="rf_120" pos="0.1 0 0.05" zaxis="-0.5 0.8660 0"/>
+    <site name="rf_135" pos="0.1 0 0.05" zaxis="-0.7071 0.7071 0"/>
+    <site name="rf_150" pos="0.1 0 0.05" zaxis="-0.8660 0.5 0"/>
+    <site name="rf_165" pos="0.1 0 0.05" zaxis="-0.9659 0.2588 0"/>
+    <site name="rf_180" pos="0.1 0 0.05" zaxis="-1 0 0"/>
+    <site name="rf_195" pos="0.1 0 0.05" zaxis="-0.9659 -0.2588 0"/>
+    <site name="rf_210" pos="0.1 0 0.05" zaxis="-0.8660 -0.5 0"/>
+    <site name="rf_225" pos="0.1 0 0.05" zaxis="-0.7071 -0.7071 0"/>
+    <site name="rf_240" pos="0.1 0 0.05" zaxis="-0.5 -0.8660 0"/>
+    <site name="rf_255" pos="0.1 0 0.05" zaxis="-0.2588 -0.9659 0"/>
+    <site name="rf_270" pos="0.1 0 0.05" zaxis="0 -1 0"/>
+    <site name="rf_285" pos="0.1 0 0.05" zaxis="0.2588 -0.9659 0"/>
+    <site name="rf_300" pos="0.1 0 0.05" zaxis="0.5 -0.8660 0"/>
+    <site name="rf_315" pos="0.1 0 0.05" zaxis="0.7071 -0.7071 0"/>
+    <site name="rf_330" pos="0.1 0 0.05" zaxis="0.8660 -0.5 0"/>
+    <site name="rf_345" pos="0.1 0 0.05" zaxis="0.9659 -0.2588 0"/>
+  </body>
+</worldbody>
+

@@ -20,6 +20,12 @@ spidev = "0.6.0"
 mavlink = "0.13.1"
 dashmap = "6.1.0"
 serde_json = "1.0.140"
+mujoco-rust = { version = "0.0.6", optional = true}
+mujoco-rs-sys = {version = "0.0.4", optional = true}
+image = { version = "0.25.6", optional = true}
+glfw = { version = "0.51", optional = true}
+gl = { version = "0.14", optional = true}
+minifb = { version = "0.27", optional = true}
 
 [dev-dependencies]
 bitfield = "0.14"
@@ -30,6 +36,8 @@ rand = "0.8.4"
 [features]
 default = []
 gzsim = ["rpos/lock_step_enabled","gz","gz-msgs-common"]
+mjsim = ["mujoco-rust","mujoco-rs-sys","image","glfw", "minifb","gl"]
+
 
 [build-dependencies]
 nom-kconfig = "0.2.0"
